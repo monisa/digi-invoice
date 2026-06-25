@@ -1,0 +1,124 @@
+.sign-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 16px;
+  background: var(--mat-sys-surface-container);
+}
+
+.panel {
+  width: 100%;
+  max-width: 720px;
+}
+
+.centered {
+  text-align: center;
+  padding: 32px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.company {
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
+.head h1 {
+  margin: 2px 0 0;
+  font: var(--mat-sys-headline-small);
+}
+
+.head .grand {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.num {
+  text-align: right;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 24px;
+  justify-content: end;
+  margin: 16px 0 0;
+}
+
+.totals dt {
+  opacity: 0.75;
+  text-align: right;
+}
+
+.totals dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.totals .g {
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding-top: 6px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin-top: 4px;
+}
+
+.sign-area {
+  margin-top: 24px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-top: 16px;
+}
+
+.fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fields mat-form-field {
+  flex: 1 1 220px;
+}
+
+.pad-label {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.pad {
+  width: 100%;
+  height: 160px;
+  border: 1px dashed var(--mat-sys-outline);
+  border-radius: 8px;
+  touch-action: none;
+  background: #fff;
+  cursor: crosshair;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.err {
+  color: var(--mat-sys-error);
+}
+
+.muted {
+  opacity: 0.7;
+  margin-top: 16px;
+}

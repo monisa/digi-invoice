@@ -9,6 +9,10 @@ import { notFound } from './middleware/notFound.middleware';
 export function createApp(): express.Express {
   const app = express();
 
+  // Behind Hostinger's proxy; needed for correct req.ip (signature audit) and
+  // for express-rate-limit on the public signing routes.
+  app.set('trust proxy', 1);
+
   app.use(helmet());
   app.use(
     cors({

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { Prisma, type QuoteStatus } from '@prisma/client';
 import { getAuth, getDb } from '../utils/requestContext';
@@ -30,6 +31,10 @@ const QUOTE_INCLUDE = {
       requester: { select: { id: true, name: true } },
       approver: { select: { id: true, name: true } },
     },
+  },
+  signatures: {
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, signerName: true, signerEmail: true, signedAt: true },
   },
 } satisfies Prisma.QuoteInclude;
 
@@ -358,14 +363,33 @@ export const QuoteController = {
         })
       : { sent: false, skipped: true, reason: 'no recipient email' };
 
+    // Ensure a non-guessable signing token exists for the public link.
+    const publicToken = full.publicToken ?? randomUUID();
+
     const updated = await db.$transaction(async (tx) => {
-      await tx.quote.update({ where: { id: quote.id }, data: { status: 'SENT' } });
+      await tx.quote.update({ where: { id: quote.id }, data: { status: 'SENT', publicToken } });
       await tx.quoteActivityLog.create({
         data: { quoteId: quote.id, userId, action: 'sent', detailsJson: { emailedTo: recipient, ...email } },
       });
       return tx.quote.findFirstOrThrow({ where: { id: quote.id }, include: QUOTE_INCLUDE });
     });
     sendData(res, updated);
+  },
+
+  async signingLink(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const quote = await db.quote.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      select: { id: true, publicToken: true },
+    });
+    if (!quote) throw ApiError.notFound('Quote not found');
+
+    let token = quote.publicToken;
+    if (!token) {
+      token = randomUUID();
+      await db.quote.update({ where: { id: quote.id }, data: { publicToken: token } });
+    }
+    sendData(res, { token });
   },
 
   async pdf(req: Request, res: Response): Promise<void> {

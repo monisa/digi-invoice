@@ -11,6 +11,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/signup/signup').then((m) => m.Signup),
   },
   {
+    // Public, unauthenticated client signing page (no shell, no guard).
+    path: 'sign/:token',
+    loadComponent: () =>
+      import('./features/quote-public-signing/quote-public-signing').then(
+        (m) => m.QuotePublicSigning,
+      ),
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     canActivate: [authGuard],

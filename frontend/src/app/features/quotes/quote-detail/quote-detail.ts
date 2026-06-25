@@ -60,6 +60,27 @@ export class QuoteDetail {
     return !!q && this.canWrite && EDITABLE_STATUSES.includes(q.status);
   }
 
+  canShare(): boolean {
+    const q = this.quote();
+    return !!q && this.canWrite && q.status === 'SENT';
+  }
+
+  copySigningLink(): void {
+    const q = this.quote();
+    if (!q) return;
+    this.service.signingLink(q.id).subscribe({
+      next: (token) => {
+        const url = `${window.location.origin}/sign/${token}`;
+        navigator.clipboard?.writeText(url).then(
+          () => this.snack.open('Signing link copied to clipboard', undefined, { duration: 3000 }),
+          () => this.snack.open(url, 'Dismiss'),
+        );
+      },
+      error: (err) =>
+        this.snack.open(extractApiError(err, 'Could not create signing link'), 'Dismiss', { duration: 5000 }),
+    });
+  }
+
   downloadPdf(): void {
     const q = this.quote();
     if (!q) return;

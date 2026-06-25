@@ -19,6 +19,13 @@ export class QuotesService extends CrudService<Quote, QuotePayload, QuotePayload
     return this.http.get(`${this.base}${this.path}/${id}/pdf`, { responseType: 'blob' });
   }
 
+  /** Ensure a public signing token exists; returns it. */
+  signingLink(id: string): Observable<string> {
+    return this.http
+      .post<ApiEnvelope<{ token: string }>>(`${this.base}${this.path}/${id}/signing-link`, {})
+      .pipe(map((env) => env.data!.token));
+  }
+
   submitForApproval(id: string, comments?: string): Observable<Quote> {
     return this.action(id, 'submit-for-approval', comments);
   }

@@ -75,9 +75,41 @@ export interface Quote {
   lineItems?: QuoteLineItem[];
   account?: Pick<Account, 'id' | 'name'> | null;
   contact?: Pick<Contact, 'id' | 'name'> | null;
+  publicToken?: string | null;
   owner?: OwnerSummary | null;
   activityLog?: QuoteActivityEntry[];
   approvals?: QuoteApproval[];
+  signatures?: QuoteSignatureSummary[];
+}
+
+export interface QuoteSignatureSummary {
+  id: string;
+  signerName?: string | null;
+  signerEmail?: string | null;
+  signedAt?: string | null;
+}
+
+/** Public (unauthenticated) read-only projection for the signing page. */
+export interface PublicQuoteView {
+  quoteNumber: string;
+  companyName: string;
+  status: QuoteStatus;
+  awaitingSignature: boolean;
+  currency: string;
+  subtotal: string;
+  discountTotal: string;
+  taxTotal: string;
+  grandTotal: string;
+  validUntil?: string | null;
+  account?: { name: string } | null;
+  contact?: { name: string; email?: string | null } | null;
+  lineItems: Array<{
+    description?: string | null;
+    quantity: string;
+    unitPrice: string;
+    discountPct: string;
+    lineTotal: string;
+  }>;
 }
 
 export interface QuoteLineItemPayload {

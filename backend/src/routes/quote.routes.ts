@@ -62,3 +62,9 @@ quoteRouter.post(
   validateBody(workflowActionSchema),
   asyncHandler(QuoteController.send),
 );
+quoteRouter.post(
+  '/:id/signing-link',
+  WRITE,
+  validateParams(idParamSchema),
+  asyncHandler(QuoteController.signingLink),
+);

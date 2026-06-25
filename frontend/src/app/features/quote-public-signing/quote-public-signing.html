@@ -1,0 +1,120 @@
+<div class="sign-page">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error() && !quote()) {
+    <mat-card class="panel">
+      <mat-card-content>
+        <h2>Unavailable</h2>
+        <p>{{ error() }}</p>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (done(); as d) {
+    <mat-card class="panel">
+      <mat-card-content class="centered">
+        <h2>{{ d === 'ACCEPTED' ? 'Thank you!' : 'Quote declined' }}</h2>
+        <p>
+          @if (d === 'ACCEPTED') {
+            Your acceptance has been recorded. You may close this window.
+          } @else {
+            We've recorded that you declined this quote.
+          }
+        </p>
+      </mat-card-content>
+    </mat-card>
+  } @else if (quote(); as q) {
+    <mat-card class="panel">
+      <mat-card-content>
+        <header class="head">
+          <div>
+            <div class="company">{{ q.companyName }}</div>
+            <h1>Quote {{ q.quoteNumber }}</h1>
+          </div>
+          <div class="grand">{{ q.grandTotal }} {{ q.currency }}</div>
+        </header>
+
+        <table mat-table [dataSource]="q.lineItems" class="full-width">
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let l">{{ l.description || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="quantity">
+            <th mat-header-cell *matHeaderCellDef class="num">Qty</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.quantity }}</td>
+          </ng-container>
+          <ng-container matColumnDef="unitPrice">
+            <th mat-header-cell *matHeaderCellDef class="num">Unit</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.unitPrice }}</td>
+          </ng-container>
+          <ng-container matColumnDef="discountPct">
+            <th mat-header-cell *matHeaderCellDef class="num">Disc%</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.discountPct }}</td>
+          </ng-container>
+          <ng-container matColumnDef="lineTotal">
+            <th mat-header-cell *matHeaderCellDef class="num">Total</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.lineTotal }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="lineColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: lineColumns"></tr>
+        </table>
+
+        <dl class="totals">
+          <dt>Subtotal</dt><dd>{{ q.subtotal }}</dd>
+          <dt>Discount</dt><dd>−{{ q.discountTotal }}</dd>
+          <dt>Tax</dt><dd>{{ q.taxTotal }}</dd>
+          <dt class="g">Grand total</dt><dd class="g">{{ q.grandTotal }} {{ q.currency }}</dd>
+        </dl>
+
+        @if (q.awaitingSignature) {
+          <div class="sign-area">
+            <h3>Accept this quote</h3>
+            <div class="fields">
+              <mat-form-field appearance="outline">
+                <mat-label>Your name</mat-label>
+                <input matInput [(ngModel)]="signerName" required />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Email (optional)</mat-label>
+                <input matInput type="email" [(ngModel)]="signerEmail" />
+              </mat-form-field>
+            </div>
+
+            <label class="pad-label">Signature</label>
+            <canvas
+              #pad
+              class="pad"
+              (pointerdown)="start($event)"
+              (pointermove)="draw($event)"
+              (pointerup)="stop()"
+              (pointerleave)="stop()"
+            ></canvas>
+            <button mat-button type="button" (click)="clearPad()">Clear signature</button>
+
+            @if (error()) {
+              <p class="err">{{ error() }}</p>
+            }
+
+            <div class="actions">
+              <button mat-stroked-button color="warn" (click)="decline()" [disabled]="submitting()">
+                Decline
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="accept()"
+                [disabled]="submitting() || !signerName.trim()"
+              >
+                Accept &amp; sign
+              </button>
+            </div>
+          </div>
+        } @else {
+          <p class="muted">This quote is currently <strong>{{ q.status }}</strong> and is not awaiting a signature.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
