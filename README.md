@@ -23,6 +23,7 @@ and Quotes (CRUD + server-authoritative totals + sequential numbering).
 refresh, AuthService with signals, Auth/Role guards, env config, API models),
 login + signup screens, and an authed app shell with a placeholder dashboard.
 
-Run the frontend: `cd frontend && npm start` (expects the API on
-`http://localhost:3000`). See [`backend/README.md`](backend/README.md) for the
-API setup and build roadmap.
+Run the frontend: `cd frontend && npm start` → serves on
+`http://localhost:6060` (expects the API on `http://localhost:3000`; the API's
+`CORS_ORIGINS` must include the app origin). See
+[`backend/README.md`](backend/README.md) for the API setup and build roadmap.

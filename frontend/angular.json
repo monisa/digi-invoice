@@ -65,6 +65,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "port": 6060
+          },
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"
