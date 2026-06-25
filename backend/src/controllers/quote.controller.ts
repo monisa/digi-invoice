@@ -5,6 +5,8 @@ import { ApiError, sendData } from '../utils/apiResponse';
 import { buildPageMeta, toPrismaPage } from '../utils/pagination';
 import type { TenantPrisma } from '../lib/tenantPrisma';
 import { calculateQuote, type CalcLineInput } from '../services/quoteCalculator';
+import { PdfService, type QuotePdfData } from '../services/pdf.service';
+import { EmailService } from '../services/email.service';
 import type {
   CreateQuoteInput,
   QuoteLineItemInput,
@@ -339,21 +341,77 @@ export const QuoteController = {
   },
 
   async send(req: Request, res: Response): Promise<void> {
-    // NOTE: PDF generation + email delivery are added in a later slice; for now
-    // this records the SENT transition and audit entry.
     const quote = await loadQuoteForTransition(req, ['APPROVED', 'DRAFT'], 'sent');
+    const db = getDb(req);
     const { userId } = getAuth(req);
 
-    const updated = await getDb(req).$transaction(async (tx) => {
+    const full = await db.quote.findFirstOrThrow({ where: { id: quote.id }, include: PDF_INCLUDE });
+    const { buffer } = await PdfService.generateQuotePdf(toPdfData(full));
+
+    const recipient = full.contact?.email ?? null;
+    const email = recipient
+      ? await EmailService.sendQuote({
+          to: recipient,
+          companyName: full.tenant.companyName,
+          quoteNumber: full.quoteNumber,
+          pdf: buffer,
+        })
+      : { sent: false, skipped: true, reason: 'no recipient email' };
+
+    const updated = await db.$transaction(async (tx) => {
       await tx.quote.update({ where: { id: quote.id }, data: { status: 'SENT' } });
       await tx.quoteActivityLog.create({
-        data: { quoteId: quote.id, userId, action: 'sent', detailsJson: Prisma.JsonNull },
+        data: { quoteId: quote.id, userId, action: 'sent', detailsJson: { emailedTo: recipient, ...email } },
       });
       return tx.quote.findFirstOrThrow({ where: { id: quote.id }, include: QUOTE_INCLUDE });
     });
     sendData(res, updated);
   },
+
+  async pdf(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const quote = await db.quote.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      include: PDF_INCLUDE,
+    });
+    if (!quote) throw ApiError.notFound('Quote not found');
+
+    const { buffer } = await PdfService.generateQuotePdf(toPdfData(quote));
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${quote.quoteNumber}.pdf"`);
+    res.send(buffer);
+  },
 };
+
+const PDF_INCLUDE = {
+  lineItems: { orderBy: { position: 'asc' } },
+  account: { select: { name: true } },
+  contact: { select: { name: true, email: true } },
+  tenant: { select: { companyName: true } },
+} satisfies Prisma.QuoteInclude;
+
+type QuoteWithPdfRelations = Prisma.QuoteGetPayload<{ include: typeof PDF_INCLUDE }>;
+
+function toPdfData(q: QuoteWithPdfRelations): QuotePdfData {
+  return {
+    tenant: { companyName: q.tenant.companyName },
+    quote: {
+      id: q.id,
+      quoteNumber: q.quoteNumber,
+      status: q.status,
+      currency: q.currency,
+      subtotal: q.subtotal,
+      discountTotal: q.discountTotal,
+      taxTotal: q.taxTotal,
+      grandTotal: q.grandTotal,
+      validUntil: q.validUntil,
+      createdAt: q.createdAt,
+      account: q.account,
+      contact: q.contact,
+      lineItems: q.lineItems,
+    },
+  };
+}
 
 /** Load a tenant-scoped, non-deleted quote and assert it's in an allowed status. */
 async function loadQuoteForTransition(

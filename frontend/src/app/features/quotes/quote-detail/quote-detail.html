@@ -22,6 +22,10 @@
         <mat-icon>arrow_back</mat-icon>
         Back
       </a>
+      <button mat-stroked-button (click)="downloadPdf()" [disabled]="acting()">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
+      </button>
       @if (canSubmit()) {
         <button mat-flat-button color="primary" (click)="submit()" [disabled]="acting()">
           <mat-icon>send</mat-icon>

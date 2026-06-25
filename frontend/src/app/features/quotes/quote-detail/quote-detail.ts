@@ -60,6 +60,24 @@ export class QuoteDetail {
     return !!q && this.canWrite && EDITABLE_STATUSES.includes(q.status);
   }
 
+  downloadPdf(): void {
+    const q = this.quote();
+    if (!q) return;
+    this.acting.set(true);
+    this.service.downloadPdf(q.id).subscribe({
+      next: (blob) => {
+        this.acting.set(false);
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.snack.open(extractApiError(err, 'Could not generate PDF'), 'Dismiss', { duration: 5000 });
+      },
+    });
+  }
+
   canSubmit(): boolean {
     const q = this.quote();
     return !!q && this.canWrite && (q.status === 'DRAFT' || q.status === 'REJECTED');

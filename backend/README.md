@@ -20,7 +20,9 @@ Health check: `GET http://localhost:3000/api/v1/health`
 
 1. In hPanel, set the Node.js app **environment variables** (never commit them):
    `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS`,
-   `NODE_ENV=production`.
+   `NODE_ENV=production`. Optionally `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/
+   `SMTP_PASS`/`SMTP_SECURE`/`MAIL_FROM` to email quotes on send (without them,
+   "send" still generates the PDF and transitions the quote, skipping email).
 2. The Hostinger `DATABASE_URL` uses `host=localhost` (resolves on the server).
    URL-encode special characters in the password — e.g. raw `sS*>n/#/0K`
    becomes `sS*%3En%2F%23%2F0K`. A commented reference value lives in `.env`.

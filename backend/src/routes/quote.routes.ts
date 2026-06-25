@@ -23,6 +23,7 @@ const APPROVE = requireRole('ADMIN', 'SALES_MANAGER');
 quoteRouter.get('/', validateQuery(listQuotesSchema), asyncHandler(QuoteController.list));
 quoteRouter.post('/', WRITE, validateBody(createQuoteSchema), asyncHandler(QuoteController.create));
 quoteRouter.get('/:id', validateParams(idParamSchema), asyncHandler(QuoteController.get));
+quoteRouter.get('/:id/pdf', validateParams(idParamSchema), asyncHandler(QuoteController.pdf));
 quoteRouter.put(
   '/:id',
   WRITE,

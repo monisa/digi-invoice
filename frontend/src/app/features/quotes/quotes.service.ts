@@ -14,6 +14,11 @@ export class QuotesService extends CrudService<Quote, QuotePayload, QuotePayload
       .pipe(map((env) => env.data as Quote));
   }
 
+  /** Fetch the quote PDF as a blob (auth handled by the interceptor). */
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}${this.path}/${id}/pdf`, { responseType: 'blob' });
+  }
+
   submitForApproval(id: string, comments?: string): Observable<Quote> {
     return this.action(id, 'submit-for-approval', comments);
   }
