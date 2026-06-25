@@ -1,0 +1,294 @@
+import type { Request, Response } from 'express';
+import { Prisma, type QuoteStatus } from '@prisma/client';
+import { getAuth, getDb } from '../utils/requestContext';
+import { ApiError, sendData } from '../utils/apiResponse';
+import { buildPageMeta, toPrismaPage } from '../utils/pagination';
+import type { TenantPrisma } from '../lib/tenantPrisma';
+import { calculateQuote, type CalcLineInput } from '../services/quoteCalculator';
+import type {
+  CreateQuoteInput,
+  QuoteLineItemInput,
+  UpdateQuoteInput,
+} from '../validators/quote.validator';
+
+// Quotes may only be edited while in these statuses; workflow transitions
+// (submit/approve/send) are handled by a dedicated slice.
+const EDITABLE: QuoteStatus[] = ['DRAFT', 'REJECTED'];
+
+const QUOTE_INCLUDE = {
+  lineItems: { orderBy: { position: 'asc' } },
+  account: true,
+  contact: true,
+  owner: { select: { id: true, name: true, email: true, role: true } },
+  activityLog: { orderBy: { createdAt: 'desc' } },
+} satisfies Prisma.QuoteInclude;
+
+/** Resolve + validate tax rates for a set of ids; returns id -> percentage. */
+async function resolveTaxMap(db: TenantPrisma, ids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return new Map();
+  const rates = await db.taxRate.findMany({
+    where: { id: { in: unique }, deletedAt: null },
+    select: { id: true, percentage: true },
+  });
+  if (rates.length !== unique.length) {
+    throw ApiError.badRequest('One or more taxRateId values are invalid', 'lineItems.taxRateId');
+  }
+  return new Map(rates.map((r) => [r.id, r.percentage.toString()]));
+}
+
+/** Validate referenced products all belong to the tenant. */
+async function validateProducts(db: TenantPrisma, ids: string[]): Promise<void> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return;
+  const found = await db.product.count({ where: { id: { in: unique }, deletedAt: null } });
+  if (found !== unique.length) {
+    throw ApiError.badRequest('One or more productId values are invalid', 'lineItems.productId');
+  }
+}
+
+/** Validate the optional header foreign keys (account/contact/deal/template/owner). */
+async function validateHeaderRefs(
+  db: TenantPrisma,
+  refs: { accountId?: string | null; contactId?: string | null; dealId?: string | null; templateId?: string | null; ownerId?: string | null },
+): Promise<void> {
+  const checks: Array<[string | null | undefined, () => Promise<number>, string]> = [
+    [refs.accountId, () => db.account.count({ where: { id: refs.accountId!, deletedAt: null } }), 'accountId'],
+    [refs.contactId, () => db.contact.count({ where: { id: refs.contactId!, deletedAt: null } }), 'contactId'],
+    [refs.dealId, () => db.deal.count({ where: { id: refs.dealId!, deletedAt: null } }), 'dealId'],
+    [refs.templateId, () => db.quoteTemplate.count({ where: { id: refs.templateId!, deletedAt: null } }), 'templateId'],
+    [refs.ownerId, () => db.user.count({ where: { id: refs.ownerId!, deletedAt: null } }), 'ownerId'],
+  ];
+  for (const [value, count, field] of checks) {
+    if (value) {
+      // eslint-disable-next-line no-await-in-loop
+      if ((await count()) === 0) throw ApiError.badRequest(`${field} does not exist`, field);
+    }
+  }
+}
+
+function toCalcInputs(
+  lines: Array<Pick<QuoteLineItemInput, 'quantity' | 'unitPrice' | 'discountPct' | 'taxRateId'>>,
+  taxMap: Map<string, string>,
+): CalcLineInput[] {
+  return lines.map((l) => ({
+    quantity: l.quantity,
+    unitPrice: l.unitPrice,
+    discountPct: l.discountPct ?? 0,
+    taxPct: l.taxRateId ? taxMap.get(l.taxRateId) ?? 0 : 0,
+  }));
+}
+
+export const QuoteController = {
+  async list(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const { page, pageSize, search, status, ownerId, accountId, dateFrom, dateTo } =
+      req.query as unknown as {
+        page: number; pageSize: number; search?: string; status?: QuoteStatus;
+        ownerId?: string; accountId?: string; dateFrom?: Date; dateTo?: Date;
+      };
+
+    const where: Prisma.QuoteWhereInput = {
+      deletedAt: null,
+      ...(status ? { status } : {}),
+      ...(ownerId ? { ownerId } : {}),
+      ...(accountId ? { accountId } : {}),
+      ...(search ? { quoteNumber: { contains: search } } : {}),
+      ...(dateFrom || dateTo
+        ? { createdAt: { ...(dateFrom ? { gte: dateFrom } : {}), ...(dateTo ? { lte: dateTo } : {}) } }
+        : {}),
+    };
+
+    const [items, total] = await Promise.all([
+      db.quote.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { owner: { select: { id: true, name: true } }, account: { select: { id: true, name: true } } },
+        ...toPrismaPage({ page, pageSize }),
+      }),
+      db.quote.count({ where }),
+    ]);
+
+    sendData(res, items, 200, buildPageMeta(total, { page, pageSize }));
+  },
+
+  async get(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const quote = await db.quote.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      include: QUOTE_INCLUDE,
+    });
+    if (!quote) throw ApiError.notFound('Quote not found');
+    sendData(res, quote);
+  },
+
+  async create(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const { tenantId, userId } = getAuth(req);
+    const input = req.body as CreateQuoteInput;
+
+    const ownerId = input.ownerId ?? userId;
+    await validateHeaderRefs(db, { ...input, ownerId });
+    await validateProducts(db, input.lineItems.map((l) => l.productId).filter((x): x is string => !!x));
+    const taxMap = await resolveTaxMap(db, input.lineItems.map((l) => l.taxRateId).filter((x): x is string => !!x));
+
+    const overallDiscountType = input.overallDiscountType ?? 'PERCENT';
+    const overallDiscountValue = input.overallDiscountValue ?? '0';
+    const calc = calculateQuote(toCalcInputs(input.lineItems, taxMap), overallDiscountType, overallDiscountValue);
+
+    const created = await db.$transaction(async (tx) => {
+      // Atomic per-tenant sequential number, e.g. QT-2026-00001. One counter
+      // row per (tenant, prefix, year); the increment is row-atomic.
+      const prefix = 'QT';
+      const year = new Date().getFullYear();
+      const seq = await tx.quoteNumberSequence.upsert({
+        where: { tenantId_prefix_year: { tenantId, prefix, year } },
+        create: { tenantId, prefix, year, lastValue: 1 },
+        update: { lastValue: { increment: 1 } },
+      });
+      const quoteNumber = `${prefix}-${year}-${String(seq.lastValue).padStart(5, '0')}`;
+
+      return tx.quote.create({
+        data: {
+          tenantId,
+          quoteNumber,
+          accountId: input.accountId ?? null,
+          contactId: input.contactId ?? null,
+          dealId: input.dealId ?? null,
+          templateId: input.templateId ?? null,
+          ownerId,
+          currency: input.currency ?? 'USD',
+          exchangeRate: input.exchangeRate ?? '1',
+          validUntil: input.validUntil ?? null,
+          overallDiscountType,
+          overallDiscountValue,
+          subtotal: calc.subtotal,
+          discountTotal: calc.discountTotal,
+          taxTotal: calc.taxTotal,
+          grandTotal: calc.grandTotal,
+          lineItems: {
+            create: input.lineItems.map((l, i) => ({
+              productId: l.productId ?? null,
+              taxRateId: l.taxRateId ?? null,
+              description: l.description ?? null,
+              quantity: l.quantity,
+              unitPrice: l.unitPrice,
+              discountPct: l.discountPct ?? '0',
+              lineTotal: calc.lines[i].lineTotal,
+              position: i,
+            })),
+          },
+          activityLog: {
+            create: { userId, action: 'created', detailsJson: { grandTotal: calc.grandTotal } },
+          },
+        },
+        include: QUOTE_INCLUDE,
+      });
+    });
+
+    sendData(res, created, 201);
+  },
+
+  async update(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const { userId } = getAuth(req);
+    const input = req.body as UpdateQuoteInput;
+
+    const existing = await db.quote.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      include: { lineItems: true },
+    });
+    if (!existing) throw ApiError.notFound('Quote not found');
+    if (!EDITABLE.includes(existing.status)) {
+      throw ApiError.conflict(`Quote cannot be edited while in status ${existing.status}`);
+    }
+
+    await validateHeaderRefs(db, input);
+
+    // Determine the line set to price: the new one if supplied, else existing.
+    const replacingLines = input.lineItems !== undefined;
+    const linesForCalc = replacingLines
+      ? input.lineItems!
+      : existing.lineItems.map((l) => ({
+          quantity: l.quantity.toString(),
+          unitPrice: l.unitPrice.toString(),
+          discountPct: l.discountPct.toString(),
+          taxRateId: l.taxRateId ?? undefined,
+        }));
+
+    if (replacingLines) {
+      await validateProducts(db, input.lineItems!.map((l) => l.productId).filter((x): x is string => !!x));
+    }
+    const taxMap = await resolveTaxMap(db, linesForCalc.map((l) => l.taxRateId).filter((x): x is string => !!x));
+
+    const overallDiscountType = input.overallDiscountType ?? existing.overallDiscountType;
+    const overallDiscountValue = input.overallDiscountValue ?? existing.overallDiscountValue.toString();
+    const calc = calculateQuote(toCalcInputs(linesForCalc, taxMap), overallDiscountType, overallDiscountValue);
+
+    const updated = await db.$transaction(async (tx) => {
+      if (replacingLines) {
+        await tx.quoteLineItem.deleteMany({ where: { quoteId: existing.id } });
+        await tx.quoteLineItem.createMany({
+          data: input.lineItems!.map((l, i) => ({
+            quoteId: existing.id,
+            productId: l.productId ?? null,
+            taxRateId: l.taxRateId ?? null,
+            description: l.description ?? null,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            discountPct: l.discountPct ?? '0',
+            lineTotal: calc.lines[i].lineTotal,
+            position: i,
+          })),
+        });
+      }
+
+      await tx.quote.update({
+        where: { id: existing.id },
+        data: {
+          ...(input.accountId !== undefined ? { accountId: input.accountId } : {}),
+          ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
+          ...(input.dealId !== undefined ? { dealId: input.dealId } : {}),
+          ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
+          ...(input.ownerId !== undefined ? { ownerId: input.ownerId } : {}),
+          ...(input.currency !== undefined ? { currency: input.currency } : {}),
+          ...(input.exchangeRate !== undefined ? { exchangeRate: input.exchangeRate } : {}),
+          ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
+          overallDiscountType,
+          overallDiscountValue,
+          subtotal: calc.subtotal,
+          discountTotal: calc.discountTotal,
+          taxTotal: calc.taxTotal,
+          grandTotal: calc.grandTotal,
+        },
+      });
+
+      await tx.quoteActivityLog.create({
+        data: { quoteId: existing.id, userId, action: 'updated', detailsJson: { grandTotal: calc.grandTotal } },
+      });
+
+      return tx.quote.findFirstOrThrow({ where: { id: existing.id }, include: QUOTE_INCLUDE });
+    });
+
+    sendData(res, updated);
+  },
+
+  async remove(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const { userId } = getAuth(req);
+    const existing = await db.quote.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) throw ApiError.notFound('Quote not found');
+
+    await db.$transaction(async (tx) => {
+      await tx.quote.update({ where: { id: existing.id }, data: { deletedAt: new Date() } });
+      await tx.quoteActivityLog.create({
+        data: { quoteId: existing.id, userId, action: 'deleted', detailsJson: Prisma.JsonNull },
+      });
+    });
+
+    sendData(res, { success: true });
+  },
+};

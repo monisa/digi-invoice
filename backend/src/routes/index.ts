@@ -6,6 +6,7 @@ import { contactRouter } from './contact.routes';
 import { dealRouter } from './deal.routes';
 import { productRouter } from './product.routes';
 import { taxRateRouter } from './taxRate.routes';
+import { quoteRouter } from './quote.routes';
 
 /**
  * API v1 root router. Resource routers (auth, users, accounts, quotes, ...)
@@ -25,6 +26,7 @@ apiRouter.use('/contacts', contactRouter);
 apiRouter.use('/deals', dealRouter);
 apiRouter.use('/tax-rates', taxRateRouter);
 apiRouter.use('/products', productRouter);
+apiRouter.use('/quotes', quoteRouter);
 // apiRouter.use('/users', usersRouter);
 // apiRouter.use('/accounts', accountsRouter);
 // ...

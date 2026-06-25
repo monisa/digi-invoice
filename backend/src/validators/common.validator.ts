@@ -38,6 +38,13 @@ export const nonNegativeDecimal = z.coerce
   .finite('Must be a finite number')
   .transform((v) => String(v));
 
+/** Strictly positive decimal (e.g. quantity); normalised to a string. */
+export const positiveDecimal = z.coerce
+  .number({ invalid_type_error: 'Must be a number' })
+  .gt(0, 'Must be greater than zero')
+  .finite('Must be a finite number')
+  .transform((v) => String(v));
+
 /** Tax percentage 0–100; normalised to a string for Prisma Decimal. */
 export const percentage = z.coerce
   .number({ invalid_type_error: 'Must be a number' })

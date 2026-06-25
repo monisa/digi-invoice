@@ -93,6 +93,12 @@ enum InvoiceStatus {
   VOID
 }
 
+// How an overall (quote-level) discount is expressed.
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
 // ---------------------------------------------------------------------------
 // Tenancy & auth
 // ---------------------------------------------------------------------------
@@ -325,6 +331,10 @@ model Quote {
   status        QuoteStatus @default(DRAFT)
   currency      String      @default("USD") @db.Char(3)
   exchangeRate  Decimal     @default(1) @db.Decimal(18, 6)
+  // Overall (quote-level) discount applied after line-level discounts.
+  overallDiscountType  DiscountType @default(PERCENT)
+  overallDiscountValue Decimal      @default(0) @db.Decimal(15, 4)
+  // Server-computed totals (decimal.js); never trusted from the client.
   subtotal      Decimal     @default(0) @db.Decimal(15, 2)
   discountTotal Decimal     @default(0) @db.Decimal(15, 2)
   taxTotal      Decimal     @default(0) @db.Decimal(15, 2)
