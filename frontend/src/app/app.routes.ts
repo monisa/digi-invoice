@@ -33,6 +33,16 @@ export const routes: Routes = [
         path: 'deals',
         loadComponent: () => import('./features/deals/deal-list/deal-list').then((m) => m.DealList),
       },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./features/products/product-list/product-list').then((m) => m.ProductList),
+      },
+      {
+        path: 'tax-rates',
+        loadComponent: () =>
+          import('./features/tax-rates/tax-rate-list/tax-rate-list').then((m) => m.TaxRateList),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

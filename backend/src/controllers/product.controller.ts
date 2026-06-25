@@ -32,7 +32,12 @@ export const ProductController = {
     };
 
     const [items, total] = await Promise.all([
-      db.product.findMany({ where, orderBy: { createdAt: 'desc' }, ...toPrismaPage({ page, pageSize }) }),
+      db.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { taxRate: { select: { id: true, name: true, percentage: true } } },
+        ...toPrismaPage({ page, pageSize }),
+      }),
       db.product.count({ where }),
     ]);
 

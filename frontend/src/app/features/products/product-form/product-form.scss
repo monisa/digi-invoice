@@ -1,0 +1,32 @@
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 440px;
+  padding-top: 8px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.row .currency {
+  max-width: 110px;
+}
+
+.form-error {
+  color: var(--mat-sys-error);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .form-grid {
+    min-width: unset;
+  }
+}

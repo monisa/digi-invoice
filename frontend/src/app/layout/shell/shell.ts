@@ -43,7 +43,8 @@ export class Shell {
     { label: 'Accounts', icon: 'business', route: '/accounts', enabled: true },
     { label: 'Contacts', icon: 'contacts', route: '/contacts', enabled: true },
     { label: 'Deals', icon: 'monetization_on', route: '/deals', enabled: true },
-    { label: 'Products', icon: 'inventory_2', route: '/products', enabled: false },
+    { label: 'Products', icon: 'inventory_2', route: '/products', enabled: true },
+    { label: 'Tax rates', icon: 'percent', route: '/tax-rates', enabled: true },
     { label: 'Quotes', icon: 'description', route: '/quotes', enabled: false },
   ];
 

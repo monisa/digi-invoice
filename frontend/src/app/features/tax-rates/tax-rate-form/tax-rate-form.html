@@ -1,0 +1,36 @@
+@if (saving()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<h2 mat-dialog-title>{{ isEdit ? 'Edit tax rate' : 'New tax rate' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" placeholder="Standard VAT" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Percentage</mat-label>
+      <input matInput type="number" min="0" max="100" step="0.01" formControlName="percentage" />
+      <span matTextSuffix>%</span>
+      @if (form.controls.percentage.touched && form.controls.percentage.invalid) {
+        <mat-error>Enter a value between 0 and 100</mat-error>
+      }
+    </mat-form-field>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
+    {{ isEdit ? 'Save' : 'Create' }}
+  </button>
+</mat-dialog-actions>

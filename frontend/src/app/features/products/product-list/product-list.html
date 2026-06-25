@@ -1,0 +1,75 @@
+<header class="list-head">
+  <div>
+    <h1>Products</h1>
+    <p>{{ total() }} total</p>
+  </div>
+  @if (canManage) {
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      New product
+    </button>
+  }
+</header>
+
+<mat-form-field appearance="outline" class="search">
+  <mat-icon matPrefix>search</mat-icon>
+  <mat-label>Search by name or SKU</mat-label>
+  <input matInput [formControl]="searchControl" />
+</mat-form-field>
+
+<div class="table-wrap">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <table mat-table [dataSource]="items()" class="full-width">
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Name</th>
+      <td mat-cell *matCellDef="let p">{{ p.name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="sku">
+      <th mat-header-cell *matHeaderCellDef>SKU</th>
+      <td mat-cell *matCellDef="let p">{{ p.sku || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="unitPrice">
+      <th mat-header-cell *matHeaderCellDef>Unit price</th>
+      <td mat-cell *matCellDef="let p">{{ p.unitPrice }} {{ p.currency }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="taxRate">
+      <th mat-header-cell *matHeaderCellDef>Tax</th>
+      <td mat-cell *matCellDef="let p">
+        {{ p.taxRate ? p.taxRate.name + ' (' + p.taxRate.percentage + '%)' : '—' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+      <td mat-cell *matCellDef="let p" class="actions-col">
+        <button mat-icon-button (click)="openEdit(p)" matTooltip="Edit">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="confirmDelete(p)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+  </table>
+
+  @if (!loading() && items().length === 0) {
+    <div class="empty">No products yet.</div>
+  }
+
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="page()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPage($event)"
+  />
+</div>
