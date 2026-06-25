@@ -1,0 +1,51 @@
+<mat-toolbar color="primary" class="topbar">
+  <button mat-icon-button (click)="drawer.toggle()" aria-label="Toggle navigation">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <span class="brand">digi-invoice</span>
+  <span class="tenant">{{ tenant()?.companyName }}</span>
+  <span class="spacer"></span>
+
+  <button mat-button [matMenuTriggerFor]="userMenu">
+    <mat-icon>account_circle</mat-icon>
+    <span class="user-name">{{ user()?.name }}</span>
+  </button>
+  <mat-menu #userMenu="matMenu">
+    <div class="user-meta" mat-menu-item disabled>
+      <div>
+        <div class="user-meta-name">{{ user()?.name }}</div>
+        <div class="user-meta-email">{{ user()?.email }}</div>
+        <div class="user-meta-role">{{ user()?.role }}</div>
+      </div>
+    </div>
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Sign out</span>
+    </button>
+  </mat-menu>
+</mat-toolbar>
+
+<mat-sidenav-container class="layout">
+  <mat-sidenav #drawer mode="side" opened class="sidenav">
+    <mat-nav-list>
+      @for (item of nav; track item.route) {
+        @if (item.enabled) {
+          <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        } @else {
+          <a mat-list-item disabled class="disabled-link">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+            <span matListItemMeta class="soon">soon</span>
+          </a>
+        }
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

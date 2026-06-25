@@ -15,7 +15,14 @@ Multi-tenant quote / proposal management SaaS (Zoho Quotes–style).
 
 ## Status
 
-**Slice 1 — Foundation (current):** project scaffold, full Prisma schema for all
-domain models, JWT auth + tenant-scoping middleware. No business endpoints yet.
+**Backend (verified against MySQL 8):** foundation + JWT auth/tenant scoping,
+Auth endpoints, CRM (Accounts/Contacts/Deals), Catalog (Products/Tax Rates),
+and Quotes (CRUD + server-authoritative totals + sequential numbering).
 
-See [`backend/README.md`](backend/README.md) for setup and the build roadmap.
+**Frontend (Angular 20 + Material):** app scaffold, core (JWT interceptor with
+refresh, AuthService with signals, Auth/Role guards, env config, API models),
+login + signup screens, and an authed app shell with a placeholder dashboard.
+
+Run the frontend: `cd frontend && npm start` (expects the API on
+`http://localhost:3000`). See [`backend/README.md`](backend/README.md) for the
+API setup and build roadmap.

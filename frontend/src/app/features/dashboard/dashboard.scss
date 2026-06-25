@@ -1,0 +1,45 @@
+.page-head {
+  margin-bottom: 24px;
+}
+
+.page-head h1 {
+  margin: 0 0 4px;
+  font: var(--mat-sys-headline-small);
+}
+
+.page-head p {
+  margin: 0;
+  opacity: 0.75;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card .mat-mdc-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px;
+}
+
+.stat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.stat-label {
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+.hint-card {
+  background: var(--mat-sys-surface-container);
+}

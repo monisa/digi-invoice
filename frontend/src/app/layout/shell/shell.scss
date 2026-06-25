@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand {
+  font-weight: 600;
+}
+
+.tenant {
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.user-name {
+  margin-left: 6px;
+}
+
+.layout {
+  height: calc(100vh - 64px);
+}
+
+.sidenav {
+  width: 240px;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+}
+
+.content {
+  padding: 24px;
+}
+
+.active-link {
+  background: var(--mat-sys-secondary-container);
+}
+
+.disabled-link {
+  opacity: 0.55;
+}
+
+.soon {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.user-meta-name {
+  font-weight: 600;
+}
+
+.user-meta-email,
+.user-meta-role {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}

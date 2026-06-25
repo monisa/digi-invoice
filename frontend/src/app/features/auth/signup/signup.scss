@@ -1,0 +1,42 @@
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+  background: var(--mat-sys-surface-container);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+button[type='submit'] {
+  margin-top: 8px;
+}
+
+.auth-error {
+  color: var(--mat-sys-error);
+  margin: 4px 0 8px;
+  font-size: 0.9rem;
+}
+
+mat-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}

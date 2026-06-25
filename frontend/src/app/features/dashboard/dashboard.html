@@ -1,0 +1,24 @@
+<header class="page-head">
+  <h1>Welcome, {{ user()?.name }}</h1>
+  <p>{{ tenant()?.companyName }} · signed in as {{ user()?.role }}</p>
+</header>
+
+<section class="stat-grid">
+  @for (s of stats; track s.label) {
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <mat-icon class="stat-icon">{{ s.icon }}</mat-icon>
+        <div class="stat-value">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </mat-card-content>
+    </mat-card>
+  }
+</section>
+
+<mat-card class="hint-card">
+  <mat-card-content>
+    Metrics and module screens are coming in upcoming slices. The navigation
+    items marked “soon” will light up as Accounts, Products and Quotes screens
+    are added.
+  </mat-card-content>
+</mat-card>
