@@ -43,6 +43,26 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/tax-rates/tax-rate-list/tax-rate-list').then((m) => m.TaxRateList),
       },
+      {
+        path: 'quotes',
+        loadComponent: () =>
+          import('./features/quotes/quote-list/quote-list').then((m) => m.QuoteList),
+      },
+      {
+        path: 'quotes/new',
+        loadComponent: () =>
+          import('./features/quotes/quote-builder/quote-builder').then((m) => m.QuoteBuilder),
+      },
+      {
+        path: 'quotes/:id',
+        loadComponent: () =>
+          import('./features/quotes/quote-detail/quote-detail').then((m) => m.QuoteDetail),
+      },
+      {
+        path: 'quotes/:id/edit',
+        loadComponent: () =>
+          import('./features/quotes/quote-builder/quote-builder').then((m) => m.QuoteBuilder),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

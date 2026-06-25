@@ -45,7 +45,7 @@ export class Shell {
     { label: 'Deals', icon: 'monetization_on', route: '/deals', enabled: true },
     { label: 'Products', icon: 'inventory_2', route: '/products', enabled: true },
     { label: 'Tax rates', icon: 'percent', route: '/tax-rates', enabled: true },
-    { label: 'Quotes', icon: 'description', route: '/quotes', enabled: false },
+    { label: 'Quotes', icon: 'description', route: '/quotes', enabled: true },
   ];
 
   logout(): void {

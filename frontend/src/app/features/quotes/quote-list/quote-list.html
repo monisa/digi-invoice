@@ -1,0 +1,108 @@
+<header class="list-head">
+  <div>
+    <h1>Quotes</h1>
+    <p>{{ total() }} total</p>
+  </div>
+  @if (canWrite) {
+    <a mat-flat-button color="primary" routerLink="/quotes/new">
+      <mat-icon>add</mat-icon>
+      New quote
+    </a>
+  }
+</header>
+
+<div class="filters">
+  <mat-form-field appearance="outline" class="search">
+    <mat-icon matPrefix>search</mat-icon>
+    <mat-label>Search by quote number</mat-label>
+    <input matInput [formControl]="searchControl" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="stage-filter">
+    <mat-label>Status</mat-label>
+    <mat-select [formControl]="statusFilter">
+      <mat-option [value]="''">All statuses</mat-option>
+      @for (s of statuses; track s) {
+        <mat-option [value]="s">{{ statusLabel(s) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<div class="table-wrap">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <table mat-table [dataSource]="items()" class="full-width">
+    <ng-container matColumnDef="quoteNumber">
+      <th mat-header-cell *matHeaderCellDef>Quote #</th>
+      <td mat-cell *matCellDef="let q">
+        <a [routerLink]="['/quotes', q.id]">{{ q.quoteNumber }}</a>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="account">
+      <th mat-header-cell *matHeaderCellDef>Account</th>
+      <td mat-cell *matCellDef="let q">{{ q.account?.name || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let q">
+        <span class="status-chip" [class]="statusClass(q.status)">{{ statusLabel(q.status) }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="grandTotal">
+      <th mat-header-cell *matHeaderCellDef>Total</th>
+      <td mat-cell *matCellDef="let q">{{ q.grandTotal }} {{ q.currency }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="validUntil">
+      <th mat-header-cell *matHeaderCellDef>Valid until</th>
+      <td mat-cell *matCellDef="let q">
+        {{ q.validUntil ? (q.validUntil | date: 'mediumDate') : '—' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="owner">
+      <th mat-header-cell *matHeaderCellDef>Owner</th>
+      <td mat-cell *matCellDef="let q">{{ q.owner?.name || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+      <td mat-cell *matCellDef="let q" class="actions-col">
+        <a mat-icon-button [routerLink]="['/quotes', q.id]" matTooltip="View">
+          <mat-icon>visibility</mat-icon>
+        </a>
+        @if (isEditable(q)) {
+          <a mat-icon-button [routerLink]="['/quotes', q.id, 'edit']" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </a>
+        }
+        @if (canWrite) {
+          <button mat-icon-button color="warn" (click)="confirmDelete(q)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+  </table>
+
+  @if (!loading() && items().length === 0) {
+    <div class="empty">No quotes yet.</div>
+  }
+
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="page()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPage($event)"
+  />
+</div>
