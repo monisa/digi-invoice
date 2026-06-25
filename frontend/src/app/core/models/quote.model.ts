@@ -41,6 +41,18 @@ export interface OwnerSummary {
   role?: string;
 }
 
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface QuoteApproval {
+  id: string;
+  status: ApprovalStatus;
+  comments?: string | null;
+  createdAt: string;
+  actedAt?: string | null;
+  requester?: { id: string; name: string } | null;
+  approver?: { id: string; name: string } | null;
+}
+
 export interface Quote {
   id: string;
   quoteNumber: string;
@@ -65,6 +77,7 @@ export interface Quote {
   contact?: Pick<Contact, 'id' | 'name'> | null;
   owner?: OwnerSummary | null;
   activityLog?: QuoteActivityEntry[];
+  approvals?: QuoteApproval[];
 }
 
 export interface QuoteLineItemPayload {

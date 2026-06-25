@@ -49,6 +49,12 @@ export const updateQuoteSchema = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'At least one field must be provided');
 
+/** Optional comments accompanying a workflow transition (submit/approve/reject/send). */
+export const workflowActionSchema = z.object({
+  comments: z.string().trim().max(2000).optional(),
+});
+export type WorkflowActionInput = z.infer<typeof workflowActionSchema>;
+
 export const listQuotesSchema = listQuerySchema.extend({
   status: z.nativeEnum(QuoteStatus).optional(),
   ownerId: z.string().uuid('Invalid ownerId').optional(),

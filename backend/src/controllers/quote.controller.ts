@@ -9,6 +9,7 @@ import type {
   CreateQuoteInput,
   QuoteLineItemInput,
   UpdateQuoteInput,
+  WorkflowActionInput,
 } from '../validators/quote.validator';
 
 // Quotes may only be edited while in these statuses; workflow transitions
@@ -21,6 +22,13 @@ const QUOTE_INCLUDE = {
   contact: true,
   owner: { select: { id: true, name: true, email: true, role: true } },
   activityLog: { orderBy: { createdAt: 'desc' } },
+  approvals: {
+    orderBy: { createdAt: 'desc' },
+    include: {
+      requester: { select: { id: true, name: true } },
+      approver: { select: { id: true, name: true } },
+    },
+  },
 } satisfies Prisma.QuoteInclude;
 
 /** Resolve + validate tax rates for a set of ids; returns id -> percentage. */
@@ -291,4 +299,117 @@ export const QuoteController = {
 
     sendData(res, { success: true });
   },
+
+  // --- Workflow transitions ------------------------------------------------
+  // State machine:
+  //   DRAFT|REJECTED --submit--> PENDING_APPROVAL
+  //   PENDING_APPROVAL --approve--> APPROVED   (managers/admins)
+  //   PENDING_APPROVAL --reject--> REJECTED    (managers/admins)
+  //   APPROVED|DRAFT --send--> SENT
+
+  async submitForApproval(req: Request, res: Response): Promise<void> {
+    const quote = await loadQuoteForTransition(req, ['DRAFT', 'REJECTED'], 'submitted for approval');
+    const { userId } = getAuth(req);
+    const comments = (req.body as WorkflowActionInput).comments ?? null;
+
+    const updated = await getDb(req).$transaction(async (tx) => {
+      await tx.quoteApproval.create({
+        data: { quoteId: quote.id, requestedBy: userId, status: 'PENDING', comments },
+      });
+      await tx.quote.update({ where: { id: quote.id }, data: { status: 'PENDING_APPROVAL' } });
+      await tx.quoteActivityLog.create({
+        data: {
+          quoteId: quote.id,
+          userId,
+          action: 'submitted_for_approval',
+          detailsJson: comments ? { comments } : Prisma.JsonNull,
+        },
+      });
+      return tx.quote.findFirstOrThrow({ where: { id: quote.id }, include: QUOTE_INCLUDE });
+    });
+    sendData(res, updated);
+  },
+
+  async approve(req: Request, res: Response): Promise<void> {
+    sendData(res, await actOnApproval(req, 'APPROVED'));
+  },
+
+  async reject(req: Request, res: Response): Promise<void> {
+    sendData(res, await actOnApproval(req, 'REJECTED'));
+  },
+
+  async send(req: Request, res: Response): Promise<void> {
+    // NOTE: PDF generation + email delivery are added in a later slice; for now
+    // this records the SENT transition and audit entry.
+    const quote = await loadQuoteForTransition(req, ['APPROVED', 'DRAFT'], 'sent');
+    const { userId } = getAuth(req);
+
+    const updated = await getDb(req).$transaction(async (tx) => {
+      await tx.quote.update({ where: { id: quote.id }, data: { status: 'SENT' } });
+      await tx.quoteActivityLog.create({
+        data: { quoteId: quote.id, userId, action: 'sent', detailsJson: Prisma.JsonNull },
+      });
+      return tx.quote.findFirstOrThrow({ where: { id: quote.id }, include: QUOTE_INCLUDE });
+    });
+    sendData(res, updated);
+  },
 };
+
+/** Load a tenant-scoped, non-deleted quote and assert it's in an allowed status. */
+async function loadQuoteForTransition(
+  req: Request,
+  allowed: QuoteStatus[],
+  verb: string,
+): Promise<{ id: string; status: QuoteStatus }> {
+  const db = getDb(req);
+  const quote = await db.quote.findFirst({
+    where: { id: req.params.id, deletedAt: null },
+    select: { id: true, status: true },
+  });
+  if (!quote) throw ApiError.notFound('Quote not found');
+  if (!allowed.includes(quote.status)) {
+    throw ApiError.conflict(`A ${quote.status} quote cannot be ${verb}`);
+  }
+  return quote;
+}
+
+/** Approve or reject the pending approval and transition the quote. */
+async function actOnApproval(req: Request, decision: 'APPROVED' | 'REJECTED') {
+  const quote = await loadQuoteForTransition(
+    req,
+    ['PENDING_APPROVAL'],
+    decision === 'APPROVED' ? 'approved' : 'rejected',
+  );
+  const { userId } = getAuth(req);
+  const comments = (req.body as WorkflowActionInput).comments ?? null;
+
+  return getDb(req).$transaction(async (tx) => {
+    const pending = await tx.quoteApproval.findFirst({
+      where: { quoteId: quote.id, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (pending) {
+      await tx.quoteApproval.update({
+        where: { id: pending.id },
+        data: { status: decision, approverId: userId, comments: comments ?? pending.comments, actedAt: new Date() },
+      });
+    } else {
+      await tx.quoteApproval.create({
+        data: { quoteId: quote.id, requestedBy: userId, approverId: userId, status: decision, comments, actedAt: new Date() },
+      });
+    }
+    await tx.quote.update({
+      where: { id: quote.id },
+      data: { status: decision === 'APPROVED' ? 'APPROVED' : 'REJECTED' },
+    });
+    await tx.quoteActivityLog.create({
+      data: {
+        quoteId: quote.id,
+        userId,
+        action: decision === 'APPROVED' ? 'approved' : 'rejected',
+        detailsJson: comments ? { comments } : Prisma.JsonNull,
+      },
+    });
+    return tx.quote.findFirstOrThrow({ where: { id: quote.id }, include: QUOTE_INCLUDE });
+  });
+}

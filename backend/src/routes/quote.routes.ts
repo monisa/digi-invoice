@@ -10,6 +10,7 @@ import {
   createQuoteSchema,
   listQuotesSchema,
   updateQuoteSchema,
+  workflowActionSchema,
 } from '../validators/quote.validator';
 
 export const quoteRouter = Router();
@@ -17,6 +18,7 @@ export const quoteRouter = Router();
 quoteRouter.use(authenticate, tenantScope);
 
 const WRITE = requireRole('ADMIN', 'SALES_MANAGER', 'SALES_REP');
+const APPROVE = requireRole('ADMIN', 'SALES_MANAGER');
 
 quoteRouter.get('/', validateQuery(listQuotesSchema), asyncHandler(QuoteController.list));
 quoteRouter.post('/', WRITE, validateBody(createQuoteSchema), asyncHandler(QuoteController.create));
@@ -29,3 +31,33 @@ quoteRouter.put(
   asyncHandler(QuoteController.update),
 );
 quoteRouter.delete('/:id', WRITE, validateParams(idParamSchema), asyncHandler(QuoteController.remove));
+
+// --- Workflow transitions ---
+quoteRouter.post(
+  '/:id/submit-for-approval',
+  WRITE,
+  validateParams(idParamSchema),
+  validateBody(workflowActionSchema),
+  asyncHandler(QuoteController.submitForApproval),
+);
+quoteRouter.post(
+  '/:id/approve',
+  APPROVE,
+  validateParams(idParamSchema),
+  validateBody(workflowActionSchema),
+  asyncHandler(QuoteController.approve),
+);
+quoteRouter.post(
+  '/:id/reject',
+  APPROVE,
+  validateParams(idParamSchema),
+  validateBody(workflowActionSchema),
+  asyncHandler(QuoteController.reject),
+);
+quoteRouter.post(
+  '/:id/send',
+  WRITE,
+  validateParams(idParamSchema),
+  validateBody(workflowActionSchema),
+  asyncHandler(QuoteController.send),
+);

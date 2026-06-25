@@ -10,10 +10,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QuotesService } from '../quotes.service';
 import { ConfirmDialog } from '../../../shared/confirm-dialog/confirm-dialog';
+import { CommentDialog } from '../../../shared/comment-dialog/comment-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { extractApiError } from '../../../core/utils/api-error';
 import { statusClass, statusLabel } from '../quote-status';
 import { EDITABLE_STATUSES, type Quote } from '../../../core/models/quote.model';
+import type { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-quote-detail',
@@ -45,6 +47,8 @@ export class QuoteDetail {
   readonly statusLabel = statusLabel;
   readonly statusClass = statusClass;
   readonly canWrite = this.auth.hasAnyRole('ADMIN', 'SALES_MANAGER', 'SALES_REP');
+  readonly canApprove = this.auth.hasAnyRole('ADMIN', 'SALES_MANAGER');
+  readonly acting = signal(false);
 
   constructor() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -54,6 +58,73 @@ export class QuoteDetail {
   canEdit(): boolean {
     const q = this.quote();
     return !!q && this.canWrite && EDITABLE_STATUSES.includes(q.status);
+  }
+
+  canSubmit(): boolean {
+    const q = this.quote();
+    return !!q && this.canWrite && (q.status === 'DRAFT' || q.status === 'REJECTED');
+  }
+
+  canDecide(): boolean {
+    return !!this.quote() && this.canApprove && this.quote()!.status === 'PENDING_APPROVAL';
+  }
+
+  canSend(): boolean {
+    const q = this.quote();
+    return !!q && this.canWrite && (q.status === 'APPROVED' || q.status === 'DRAFT');
+  }
+
+  submit(): void {
+    this.runWithComment(
+      { title: 'Submit for approval', confirmLabel: 'Submit' },
+      (c) => this.service.submitForApproval(this.quote()!.id, c),
+    );
+  }
+
+  approve(): void {
+    this.runWithComment(
+      { title: 'Approve quote', confirmLabel: 'Approve' },
+      (c) => this.service.approve(this.quote()!.id, c),
+    );
+  }
+
+  reject(): void {
+    this.runWithComment(
+      { title: 'Reject quote', confirmLabel: 'Reject', required: true, destructive: true },
+      (c) => this.service.reject(this.quote()!.id, c),
+    );
+  }
+
+  send(): void {
+    this.runAction(this.service.send(this.quote()!.id), 'Quote sent');
+  }
+
+  private runWithComment(
+    dialogData: { title: string; confirmLabel: string; required?: boolean; destructive?: boolean },
+    op: (comments?: string) => Observable<Quote>,
+  ): void {
+    this.dialog
+      .open(CommentDialog, { data: dialogData })
+      .afterClosed()
+      .subscribe((result?: { comments?: string }) => {
+        if (!result) return;
+        this.runAction(op(result.comments), `Quote ${dialogData.confirmLabel.toLowerCase()}d`);
+      });
+  }
+
+  private runAction(op$: Observable<Quote>, successMsg: string): void {
+    this.acting.set(true);
+    op$.subscribe({
+      next: (quote) => {
+        this.acting.set(false);
+        this.quote.set(quote);
+        this.snack.open(successMsg, undefined, { duration: 2500 });
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.snack.open(extractApiError(err, 'Action failed'), 'Dismiss', { duration: 5000 });
+      },
+    });
   }
 
   private load(id: string): void {
