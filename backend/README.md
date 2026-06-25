@@ -16,6 +16,21 @@ npm run dev                   # start on http://localhost:3000
 
 Health check: `GET http://localhost:3000/api/v1/health`
 
+## Deploying to Hostinger
+
+1. In hPanel, set the Node.js app **environment variables** (never commit them):
+   `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS`,
+   `NODE_ENV=production`.
+2. The Hostinger `DATABASE_URL` uses `host=localhost` (resolves on the server).
+   URL-encode special characters in the password — e.g. raw `sS*>n/#/0K`
+   becomes `sS*%3En%2F%23%2F0K`. A commented reference value lives in `.env`.
+3. Apply migrations against the production DB at release time:
+   `npm run prisma:deploy` (runs `prisma migrate deploy` — no schema drift, no
+   data loss, applies committed migrations only).
+
+> **Security:** the database password was shared in chat during setup —
+> **rotate it in hPanel** and update the env var.
+
 ## Architecture (Slice 1 — Foundation)
 
 | Concern            | Where                                             |
