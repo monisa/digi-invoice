@@ -1,0 +1,52 @@
+@if (saving()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<h2 mat-dialog-title>{{ isEdit ? 'Edit template' : 'New template' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Header HTML</mat-label>
+      <textarea matInput formControlName="headerHtml" rows="3"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Terms HTML</mat-label>
+      <textarea matInput formControlName="termsHtml" rows="3"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Footer HTML</mat-label>
+      <textarea matInput formControlName="footerHtml" rows="2"></textarea>
+    </mat-form-field>
+
+    <mat-slide-toggle formControlName="isDefault">Use as default template</mat-slide-toggle>
+
+    <p class="hint">
+      Placeholders (substituted in the PDF):
+      @for (p of placeholders; track p) {
+        <code>{{ p }}</code>
+      }
+    </p>
+    <p class="hint muted">Note: HTML is reduced to text in the generated PDF.</p>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
+    {{ isEdit ? 'Save' : 'Create' }}
+  </button>
+</mat-dialog-actions>

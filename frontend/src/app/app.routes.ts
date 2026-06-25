@@ -85,6 +85,11 @@ export const routes: Routes = [
           import('./features/invoices/invoice-list/invoice-list').then((m) => m.InvoiceList),
       },
       {
+        path: 'quote-templates',
+        loadComponent: () =>
+          import('./features/quote-templates/template-list/template-list').then((m) => m.TemplateList),
+      },
+      {
         path: 'users',
         canActivate: [roleGuard('ADMIN', 'SALES_MANAGER')],
         loadComponent: () => import('./features/users/user-list/user-list').then((m) => m.UserList),

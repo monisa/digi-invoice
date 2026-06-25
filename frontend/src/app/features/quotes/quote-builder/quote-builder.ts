@@ -19,11 +19,13 @@ import { AccountsService } from '../../accounts/accounts.service';
 import { ContactsService } from '../../contacts/contacts.service';
 import { ProductsService } from '../../products/products.service';
 import { TaxRatesService } from '../../tax-rates/tax-rates.service';
+import { QuoteTemplatesService } from '../../quote-templates/quote-templates.service';
 import { extractApiError } from '../../../core/utils/api-error';
 import { calculateQuote, type CalcTotals } from '../quote-calc';
 import { EDITABLE_STATUSES, type QuotePayload } from '../../../core/models/quote.model';
 import type { Account, Contact } from '../../../core/models/crm.model';
 import type { Product, TaxRate } from '../../../core/models/catalog.model';
+import type { QuoteTemplate } from '../../../core/models/quote-template.model';
 
 const EMPTY_TOTALS: CalcTotals = {
   lineTotals: [],
@@ -59,6 +61,7 @@ export class QuoteBuilder {
   private readonly contactsService = inject(ContactsService);
   private readonly productsService = inject(ProductsService);
   private readonly taxRatesService = inject(TaxRatesService);
+  private readonly templatesService = inject(QuoteTemplatesService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
@@ -71,6 +74,7 @@ export class QuoteBuilder {
   readonly contacts = signal<Contact[]>([]);
   readonly products = signal<Product[]>([]);
   readonly taxRates = signal<TaxRate[]>([]);
+  readonly templates = signal<QuoteTemplate[]>([]);
 
   readonly saving = signal(false);
   readonly loading = signal(false);
@@ -82,6 +86,7 @@ export class QuoteBuilder {
   readonly header = this.fb.nonNullable.group({
     accountId: [''],
     contactId: [''],
+    templateId: [''],
     currency: ['USD', Validators.required],
     exchangeRate: ['1', [Validators.required, Validators.min(0.000001)]],
     validUntil: [''],
@@ -161,6 +166,7 @@ export class QuoteBuilder {
     this.contactsService.list({ pageSize: 100 }).subscribe((r) => this.contacts.set(r.items));
     this.productsService.list({ pageSize: 100 }).subscribe((r) => this.products.set(r.items));
     this.taxRatesService.list({ pageSize: 100 }).subscribe((r) => this.taxRates.set(r.items));
+    this.templatesService.list({ pageSize: 100 }).subscribe((r) => this.templates.set(r.items));
   }
 
   private loadQuote(id: string): void {
@@ -176,6 +182,7 @@ export class QuoteBuilder {
         this.header.patchValue({
           accountId: quote.accountId ?? '',
           contactId: quote.contactId ?? '',
+          templateId: quote.templateId ?? '',
           currency: quote.currency,
           exchangeRate: quote.exchangeRate,
           validUntil: quote.validUntil?.slice(0, 10) ?? '',
@@ -216,6 +223,7 @@ export class QuoteBuilder {
     const payload: QuotePayload = {
       accountId: h.accountId || null,
       contactId: h.contactId || null,
+      templateId: h.templateId || null,
       currency: h.currency,
       exchangeRate: h.exchangeRate,
       validUntil: h.validUntil || null,

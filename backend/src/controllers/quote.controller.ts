@@ -351,7 +351,8 @@ export const QuoteController = {
     const { userId } = getAuth(req);
 
     const full = await db.quote.findFirstOrThrow({ where: { id: quote.id }, include: PDF_INCLUDE });
-    const { buffer } = await PdfService.generateQuotePdf(toPdfData(full));
+    const template = await resolveTemplate(db, full.template);
+    const { buffer } = await PdfService.generateQuotePdf(toPdfData(full, template));
 
     const recipient = full.contact?.email ?? null;
     const email = recipient
@@ -438,7 +439,8 @@ export const QuoteController = {
     });
     if (!quote) throw ApiError.notFound('Quote not found');
 
-    const { buffer } = await PdfService.generateQuotePdf(toPdfData(quote));
+    const template = await resolveTemplate(db, quote.template);
+    const { buffer } = await PdfService.generateQuotePdf(toPdfData(quote, template));
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${quote.quoteNumber}.pdf"`);
     res.send(buffer);
@@ -450,13 +452,29 @@ const PDF_INCLUDE = {
   account: { select: { name: true } },
   contact: { select: { name: true, email: true } },
   tenant: { select: { companyName: true } },
+  template: { select: { headerHtml: true, footerHtml: true, termsHtml: true } },
 } satisfies Prisma.QuoteInclude;
+
+type TemplateContent = { headerHtml: string | null; footerHtml: string | null; termsHtml: string | null };
+
+/** The quote's template, or the tenant default if it has none. */
+async function resolveTemplate(
+  db: ReturnType<typeof getDb>,
+  quoteTemplate: TemplateContent | null,
+): Promise<TemplateContent | null> {
+  if (quoteTemplate) return quoteTemplate;
+  return db.quoteTemplate.findFirst({
+    where: { isDefault: true, deletedAt: null },
+    select: { headerHtml: true, footerHtml: true, termsHtml: true },
+  });
+}
 
 type QuoteWithPdfRelations = Prisma.QuoteGetPayload<{ include: typeof PDF_INCLUDE }>;
 
-function toPdfData(q: QuoteWithPdfRelations): QuotePdfData {
+function toPdfData(q: QuoteWithPdfRelations, template: TemplateContent | null): QuotePdfData {
   return {
     tenant: { companyName: q.tenant.companyName },
+    template,
     quote: {
       id: q.id,
       quoteNumber: q.quoteNumber,

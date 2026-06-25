@@ -10,6 +10,8 @@ import path from 'node:path';
 
 export interface QuotePdfData {
   tenant: { companyName: string };
+  /** Optional branding template; HTML is reduced to text for the PDF. */
+  template?: { headerHtml?: string | null; footerHtml?: string | null; termsHtml?: string | null } | null;
   quote: {
     id: string;
     quoteNumber: string;
@@ -48,13 +50,29 @@ export const PdfService = {
 };
 
 function render(data: QuotePdfData): Promise<Buffer> {
-  const { tenant, quote } = data;
+  const { tenant, quote, template } = data;
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const done = collect(doc);
 
   const left = doc.page.margins.left;
   const right = doc.page.width - doc.page.margins.right;
   const money = (v: unknown) => `${s(v)} ${quote.currency}`;
+
+  // Resolve {{placeholders}} and reduce HTML to plain text for the PDF.
+  const placeholders: Record<string, string> = {
+    company_name: tenant.companyName,
+    quote_number: quote.quoteNumber,
+    client_name: quote.account?.name ?? '',
+    contact_name: quote.contact?.name ?? '',
+    grand_total: `${s(quote.grandTotal)} ${quote.currency}`,
+    currency: quote.currency,
+    valid_until: quote.validUntil ? formatDate(quote.validUntil) : '',
+  };
+  const fill = (html?: string | null): string =>
+    html ? htmlToText(html.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: string) => placeholders[k] ?? '')) : '';
+  const headerText = fill(template?.headerHtml);
+  const termsText = fill(template?.termsHtml);
+  const footerText = fill(template?.footerHtml);
 
   // Header
   doc.fontSize(20).font('Helvetica-Bold').text(tenant.companyName, left, 50);
@@ -74,6 +92,13 @@ function render(data: QuotePdfData): Promise<Buffer> {
   if (quote.contact?.name) doc.text(quote.contact.name);
   if (quote.contact?.email) doc.text(quote.contact.email);
   doc.fillColor('#000');
+
+  // Template header / intro
+  if (headerText) {
+    doc.moveDown(1.2);
+    doc.font('Helvetica').fontSize(10).fillColor('#333').text(headerText, left, doc.y, { width: right - left });
+    doc.fillColor('#000');
+  }
 
   // Line items table
   doc.moveDown(1.5);
@@ -115,12 +140,38 @@ function render(data: QuotePdfData): Promise<Buffer> {
   totalLine('Tax', money(quote.taxTotal));
   totalLine('Grand total', money(quote.grandTotal), true);
 
-  // Footer
+  // Template terms
+  if (termsText) {
+    doc.moveDown(2);
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#000').text('Terms', left, doc.y);
+    doc.font('Helvetica').fontSize(9).fillColor('#444').text(termsText, { width: right - left });
+    doc.fillColor('#000');
+  }
+
+  // Footer — template footer if provided, else a default line
   doc.font('Helvetica').fontSize(8).fillColor('#999');
-  doc.text('Thank you for your business.', left, doc.page.height - 70, { align: 'center', width: right - left });
+  doc.text(footerText || 'Thank you for your business.', left, doc.page.height - 70, {
+    align: 'center',
+    width: right - left,
+  });
 
   doc.end();
   return done;
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/\s*(p|div|h[1-6]|li)\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function collect(doc: PDFKit.PDFDocument): Promise<Buffer> {

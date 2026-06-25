@@ -36,6 +36,16 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>Template</mat-label>
+          <mat-select formControlName="templateId">
+            <mat-option [value]="''">— Default —</mat-option>
+            @for (tpl of templates(); track tpl.id) {
+              <mat-option [value]="tpl.id">{{ tpl.name }}@if (tpl.isDefault) { (default) }</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Currency</mat-label>
           <input matInput formControlName="currency" maxlength="3" />
         </mat-form-field>

@@ -48,6 +48,7 @@ export class Shell {
     { label: 'Products', icon: 'inventory_2', route: '/products', enabled: true },
     { label: 'Tax rates', icon: 'percent', route: '/tax-rates', enabled: true },
     { label: 'Quotes', icon: 'description', route: '/quotes', enabled: true },
+    { label: 'Templates', icon: 'article', route: '/quote-templates', enabled: true },
     { label: 'Sales orders', icon: 'shopping_cart', route: '/sales-orders', enabled: true },
     { label: 'Invoices', icon: 'receipt_long', route: '/invoices', enabled: true },
     { label: 'Users', icon: 'group', route: '/users', enabled: true, roles: ['ADMIN', 'SALES_MANAGER'] },
