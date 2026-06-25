@@ -376,6 +376,44 @@ export const QuoteController = {
     sendData(res, updated);
   },
 
+  async convertToOrder(req: Request, res: Response): Promise<void> {
+    const db = getDb(req);
+    const { tenantId, userId } = getAuth(req);
+    const quote = await db.quote.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      select: { id: true, status: true },
+    });
+    if (!quote) throw ApiError.notFound('Quote not found');
+    if (!['ACCEPTED', 'APPROVED'].includes(quote.status)) {
+      throw ApiError.conflict(`A ${quote.status} quote cannot be converted to an order`);
+    }
+    const existing = await db.salesOrder.findFirst({
+      where: { quoteId: quote.id, deletedAt: null },
+      select: { id: true },
+    });
+    if (existing) throw ApiError.conflict('This quote has already been converted to an order');
+
+    const order = await db.$transaction(async (tx) => {
+      const prefix = 'SO';
+      const year = new Date().getFullYear();
+      const seq = await tx.quoteNumberSequence.upsert({
+        where: { tenantId_prefix_year: { tenantId, prefix, year } },
+        create: { tenantId, prefix, year, lastValue: 1 },
+        update: { lastValue: { increment: 1 } },
+      });
+      const orderNumber = `${prefix}-${year}-${String(seq.lastValue).padStart(5, '0')}`;
+      const created = await tx.salesOrder.create({
+        data: { tenantId, quoteId: quote.id, orderNumber, status: 'OPEN' },
+        include: { quote: { select: { id: true, quoteNumber: true, currency: true, grandTotal: true } } },
+      });
+      await tx.quoteActivityLog.create({
+        data: { quoteId: quote.id, userId, action: 'converted_to_order', detailsJson: { orderNumber } },
+      });
+      return created;
+    });
+    sendData(res, order, 201);
+  },
+
   async signingLink(req: Request, res: Response): Promise<void> {
     const db = getDb(req);
     const quote = await db.quote.findFirst({

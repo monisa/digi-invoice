@@ -54,6 +54,12 @@
           Send
         </button>
       }
+      @if (canConvert()) {
+        <button mat-flat-button color="primary" (click)="convertToOrder()" [disabled]="acting()">
+          <mat-icon>shopping_cart_checkout</mat-icon>
+          Convert to order
+        </button>
+      }
       @if (canEdit()) {
         <a mat-stroked-button [routerLink]="['/quotes', q.id, 'edit']">
           <mat-icon>edit</mat-icon>

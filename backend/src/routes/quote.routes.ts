@@ -68,3 +68,9 @@ quoteRouter.post(
   validateParams(idParamSchema),
   asyncHandler(QuoteController.signingLink),
 );
+quoteRouter.post(
+  '/:id/convert-to-order',
+  APPROVE,
+  validateParams(idParamSchema),
+  asyncHandler(QuoteController.convertToOrder),
+);

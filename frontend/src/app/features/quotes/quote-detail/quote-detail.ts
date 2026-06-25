@@ -65,6 +65,28 @@ export class QuoteDetail {
     return !!q && this.canWrite && q.status === 'SENT';
   }
 
+  canConvert(): boolean {
+    const q = this.quote();
+    return !!q && this.canApprove && (q.status === 'ACCEPTED' || q.status === 'APPROVED');
+  }
+
+  convertToOrder(): void {
+    const q = this.quote();
+    if (!q) return;
+    this.acting.set(true);
+    this.service.convertToOrder(q.id).subscribe({
+      next: (order) => {
+        this.acting.set(false);
+        this.snack.open(`Created sales order ${order.orderNumber}`, undefined, { duration: 3000 });
+        void this.router.navigate(['/sales-orders']);
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.snack.open(extractApiError(err, 'Could not convert'), 'Dismiss', { duration: 5000 });
+      },
+    });
+  }
+
   copySigningLink(): void {
     const q = this.quote();
     if (!q) return;

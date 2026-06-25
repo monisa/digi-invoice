@@ -19,6 +19,16 @@ export class QuotesService extends CrudService<Quote, QuotePayload, QuotePayload
     return this.http.get(`${this.base}${this.path}/${id}/pdf`, { responseType: 'blob' });
   }
 
+  /** Convert an accepted/approved quote to a sales order. */
+  convertToOrder(id: string): Observable<{ id: string; orderNumber: string }> {
+    return this.http
+      .post<ApiEnvelope<{ id: string; orderNumber: string }>>(
+        `${this.base}${this.path}/${id}/convert-to-order`,
+        {},
+      )
+      .pipe(map((env) => env.data!));
+  }
+
   /** Ensure a public signing token exists; returns it. */
   signingLink(id: string): Observable<string> {
     return this.http

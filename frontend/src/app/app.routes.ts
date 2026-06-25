@@ -71,6 +71,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/quotes/quote-builder/quote-builder').then((m) => m.QuoteBuilder),
       },
+      {
+        path: 'sales-orders',
+        loadComponent: () =>
+          import('./features/sales-orders/sales-order-list/sales-order-list').then(
+            (m) => m.SalesOrderList,
+          ),
+      },
+      {
+        path: 'invoices',
+        loadComponent: () =>
+          import('./features/invoices/invoice-list/invoice-list').then((m) => m.InvoiceList),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

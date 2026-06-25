@@ -8,6 +8,8 @@ import { productRouter } from './product.routes';
 import { taxRateRouter } from './taxRate.routes';
 import { quoteRouter } from './quote.routes';
 import { publicRouter } from './public.routes';
+import { salesOrderRouter } from './salesOrder.routes';
+import { invoiceRouter } from './invoice.routes';
 
 /**
  * API v1 root router. Resource routers (auth, users, accounts, quotes, ...)
@@ -28,6 +30,8 @@ apiRouter.use('/deals', dealRouter);
 apiRouter.use('/tax-rates', taxRateRouter);
 apiRouter.use('/products', productRouter);
 apiRouter.use('/quotes', quoteRouter);
+apiRouter.use('/sales-orders', salesOrderRouter);
+apiRouter.use('/invoices', invoiceRouter);
 apiRouter.use('/public', publicRouter); // unauthenticated, token-gated
 // apiRouter.use('/users', usersRouter);
 // apiRouter.use('/accounts', accountsRouter);

@@ -1,0 +1,83 @@
+<header class="list-head">
+  <div>
+    <h1>Sales orders</h1>
+    <p>{{ total() }} total</p>
+  </div>
+</header>
+
+<div class="filters">
+  <mat-form-field appearance="outline" class="search">
+    <mat-icon matPrefix>search</mat-icon>
+    <mat-label>Search by order number</mat-label>
+    <input matInput [formControl]="searchControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="stage-filter">
+    <mat-label>Status</mat-label>
+    <mat-select [formControl]="statusFilter">
+      <mat-option [value]="''">All</mat-option>
+      @for (s of statuses; track s) {
+        <mat-option [value]="s">{{ statusLabel(s) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<div class="table-wrap">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <table mat-table [dataSource]="items()" class="full-width">
+    <ng-container matColumnDef="orderNumber">
+      <th mat-header-cell *matHeaderCellDef>Order #</th>
+      <td mat-cell *matCellDef="let o">{{ o.orderNumber }}</td>
+    </ng-container>
+    <ng-container matColumnDef="quote">
+      <th mat-header-cell *matHeaderCellDef>Quote</th>
+      <td mat-cell *matCellDef="let o">
+        @if (o.quote) {
+          <a [routerLink]="['/quotes', o.quote.id]">{{ o.quote.quoteNumber }}</a>
+        } @else { — }
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="account">
+      <th mat-header-cell *matHeaderCellDef>Account</th>
+      <td mat-cell *matCellDef="let o">{{ o.quote?.account?.name || '—' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="total">
+      <th mat-header-cell *matHeaderCellDef>Total</th>
+      <td mat-cell *matCellDef="let o">{{ o.quote?.grandTotal }} {{ o.quote?.currency }}</td>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let o">
+        <span class="status-chip" [class]="statusClass(o.status)">{{ statusLabel(o.status) }}</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+      <td mat-cell *matCellDef="let o" class="actions-col">
+        <button mat-icon-button (click)="convertToInvoice(o)" matTooltip="Create invoice" [disabled]="o.status === 'CANCELLED'">
+          <mat-icon>receipt_long</mat-icon>
+        </button>
+        <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Set status">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @for (s of statuses; track s) {
+            <button mat-menu-item (click)="setStatus(o, s)" [disabled]="o.status === s">{{ statusLabel(s) }}</button>
+          }
+        </mat-menu>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+  </table>
+
+  @if (!loading() && items().length === 0) {
+    <div class="empty">No sales orders yet. Convert an accepted quote to create one.</div>
+  }
+
+  <mat-paginator [length]="total()" [pageIndex]="page()" [pageSize]="pageSize()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />
+</div>
