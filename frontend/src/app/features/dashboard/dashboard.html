@@ -3,22 +3,86 @@
   <p>{{ tenant()?.companyName }} · signed in as {{ user()?.role }}</p>
 </header>
 
-<section class="stat-grid">
-  @for (s of stats; track s.label) {
-    <mat-card class="stat-card">
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (error()) {
+  <mat-card class="hint-card"><mat-card-content>{{ error() }}</mat-card-content></mat-card>
+}
+
+@if (summary(); as s) {
+  <section class="stat-grid">
+    @for (st of stats(); track st.label) {
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <mat-icon class="stat-icon">{{ st.icon }}</mat-icon>
+          <div class="stat-value">{{ st.value }}</div>
+          <div class="stat-label">{{ st.label }}</div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </section>
+
+  <div class="two-col">
+    <mat-card class="section">
+      <mat-card-header><mat-card-title>Quotes by status</mat-card-title></mat-card-header>
       <mat-card-content>
-        <mat-icon class="stat-icon">{{ s.icon }}</mat-icon>
-        <div class="stat-value">{{ s.value }}</div>
-        <div class="stat-label">{{ s.label }}</div>
+        <ul class="status-list">
+          @for (entry of s.quotes.byStatus | keyvalue; track entry.key) {
+            <li>
+              <span>{{ entry.key }}</span>
+              <span class="count">{{ entry.value }}</span>
+            </li>
+          }
+          @if ((s.quotes.byStatus | keyvalue).length === 0) {
+            <li class="muted">No quotes yet. <a routerLink="/quotes">Create one</a>.</li>
+          }
+        </ul>
       </mat-card-content>
     </mat-card>
-  }
-</section>
 
-<mat-card class="hint-card">
-  <mat-card-content>
-    Metrics and module screens are coming in upcoming slices. The navigation
-    items marked “soon” will light up as Accounts, Products and Quotes screens
-    are added.
-  </mat-card-content>
-</mat-card>
+    <mat-card class="section">
+      <mat-card-header><mat-card-title>Invoices</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <ul class="status-list">
+          <li><span>Total</span><span class="count">{{ s.invoices.total }}</span></li>
+          <li><span>Outstanding</span><span class="count">{{ s.invoices.outstanding }}</span></li>
+          <li><span>Paid</span><span class="count">{{ s.invoices.paid }}</span></li>
+        </ul>
+        <div class="accepted-value">
+          Accepted value: <strong>{{ s.acceptedValue }}</strong>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Per sales rep</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="s.perRep" class="full-width">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Rep</th>
+          <td mat-cell *matCellDef="let r">{{ r.name }}</td>
+        </ng-container>
+        <ng-container matColumnDef="totalQuotes">
+          <th mat-header-cell *matHeaderCellDef class="num">Quotes</th>
+          <td mat-cell *matCellDef="let r" class="num">{{ r.totalQuotes }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acceptedQuotes">
+          <th mat-header-cell *matHeaderCellDef class="num">Accepted</th>
+          <td mat-cell *matCellDef="let r" class="num">{{ r.acceptedQuotes }}</td>
+        </ng-container>
+        <ng-container matColumnDef="totalValue">
+          <th mat-header-cell *matHeaderCellDef class="num">Total value</th>
+          <td mat-cell *matCellDef="let r" class="num">{{ r.totalValue }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="repColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: repColumns"></tr>
+      </table>
+      @if (s.perRep.length === 0) {
+        <p class="muted">No data yet.</p>
+      }
+    </mat-card-content>
+  </mat-card>
+}
