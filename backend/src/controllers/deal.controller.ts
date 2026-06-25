@@ -27,6 +27,7 @@ export const DealController = {
       db.deal.findMany({
         where,
         orderBy: { createdAt: 'desc' },
+        include: { account: { select: { id: true, name: true } } },
         ...toPrismaPage({ page, pageSize }),
       }),
       db.deal.count({ where }),

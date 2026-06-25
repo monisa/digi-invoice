@@ -1,0 +1,50 @@
+@if (saving()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<h2 mat-dialog-title>{{ isEdit ? 'Edit account' : 'New account' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Industry</mat-label>
+      <input matInput formControlName="industry" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Website</mat-label>
+      <input matInput formControlName="website" placeholder="https://example.com" />
+      @if (form.controls.website.touched && form.controls.website.hasError('url')) {
+        <mat-error>Must be a valid URL (http/https)</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Billing address</mat-label>
+      <textarea matInput formControlName="billingAddress" rows="2"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Shipping address</mat-label>
+      <textarea matInput formControlName="shippingAddress" rows="2"></textarea>
+    </mat-form-field>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
+    {{ isEdit ? 'Save' : 'Create' }}
+  </button>
+</mat-dialog-actions>

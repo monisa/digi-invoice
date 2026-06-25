@@ -1,0 +1,63 @@
+@if (saving()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<h2 mat-dialog-title>{{ isEdit ? 'Edit deal' : 'New deal' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Account</mat-label>
+      <mat-select formControlName="accountId">
+        <mat-option [value]="''">— None —</mat-option>
+        @for (a of accounts(); track a.id) {
+          <mat-option [value]="a.id">{{ a.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Stage</mat-label>
+      <mat-select formControlName="stage">
+        @for (s of stages; track s) {
+          <mat-option [value]="s">{{ stageLabel(s) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Amount</mat-label>
+        <input matInput type="number" min="0" step="0.01" formControlName="amount" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="currency">
+        <mat-label>Currency</mat-label>
+        <input matInput formControlName="currency" maxlength="3" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Expected close date</mat-label>
+      <input matInput type="date" formControlName="expectedCloseDate" />
+    </mat-form-field>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
+    {{ isEdit ? 'Save' : 'Create' }}
+  </button>
+</mat-dialog-actions>

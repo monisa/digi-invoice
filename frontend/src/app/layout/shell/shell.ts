@@ -40,9 +40,9 @@ export class Shell {
 
   readonly nav: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', enabled: true },
-    { label: 'Accounts', icon: 'business', route: '/accounts', enabled: false },
-    { label: 'Contacts', icon: 'contacts', route: '/contacts', enabled: false },
-    { label: 'Deals', icon: 'monetization_on', route: '/deals', enabled: false },
+    { label: 'Accounts', icon: 'business', route: '/accounts', enabled: true },
+    { label: 'Contacts', icon: 'contacts', route: '/contacts', enabled: true },
+    { label: 'Deals', icon: 'monetization_on', route: '/deals', enabled: true },
     { label: 'Products', icon: 'inventory_2', route: '/products', enabled: false },
     { label: 'Quotes', icon: 'description', route: '/quotes', enabled: false },
   ];

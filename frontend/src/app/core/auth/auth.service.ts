@@ -39,6 +39,12 @@ export class AuthService {
     return this._accessToken();
   }
 
+  /** True if the current user's role is one of the given roles. */
+  hasAnyRole(...roles: AuthUser['role'][]): boolean {
+    const role = this._user()?.role;
+    return !!role && roles.includes(role);
+  }
+
   login(req: LoginRequest): Observable<AuthResult> {
     return this.http
       .post<ApiEnvelope<AuthResult>>(`${this.base}/auth/login`, req)

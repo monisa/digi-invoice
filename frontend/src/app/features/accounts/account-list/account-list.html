@@ -1,0 +1,79 @@
+<header class="list-head">
+  <div>
+    <h1>Accounts</h1>
+    <p>{{ total() }} total</p>
+  </div>
+  @if (canWrite) {
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      New account
+    </button>
+  }
+</header>
+
+<mat-form-field appearance="outline" class="search">
+  <mat-icon matPrefix>search</mat-icon>
+  <mat-label>Search by name</mat-label>
+  <input matInput [formControl]="searchControl" />
+</mat-form-field>
+
+<div class="table-wrap">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <table mat-table [dataSource]="items()" class="full-width">
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Name</th>
+      <td mat-cell *matCellDef="let a">{{ a.name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="industry">
+      <th mat-header-cell *matHeaderCellDef>Industry</th>
+      <td mat-cell *matCellDef="let a">{{ a.industry || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="website">
+      <th mat-header-cell *matHeaderCellDef>Website</th>
+      <td mat-cell *matCellDef="let a">
+        @if (a.website) {
+          <a [href]="a.website" target="_blank" rel="noopener">{{ a.website }}</a>
+        } @else {
+          —
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>Created</th>
+      <td mat-cell *matCellDef="let a">{{ a.createdAt | date: 'mediumDate' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+      <td mat-cell *matCellDef="let a" class="actions-col">
+        <button mat-icon-button (click)="openEdit(a)" matTooltip="Edit">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="confirmDelete(a)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+  </table>
+
+  @if (!loading() && items().length === 0) {
+    <div class="empty">No accounts yet.</div>
+  }
+
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="page()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPage($event)"
+  />
+</div>

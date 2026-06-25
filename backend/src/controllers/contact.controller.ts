@@ -27,6 +27,7 @@ export const ContactController = {
       db.contact.findMany({
         where,
         orderBy: { createdAt: 'desc' },
+        include: { account: { select: { id: true, name: true } } },
         ...toPrismaPage({ page, pageSize }),
       }),
       db.contact.count({ where }),
