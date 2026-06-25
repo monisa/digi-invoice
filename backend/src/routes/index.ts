@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { sendData } from '../utils/apiResponse';
 import { authRouter } from './auth.routes';
+import { userRouter } from './user.routes';
 import { accountRouter } from './account.routes';
 import { contactRouter } from './contact.routes';
 import { dealRouter } from './deal.routes';
@@ -25,6 +26,7 @@ apiRouter.get('/health', (_req, res) => {
 
 // --- Resource routers (added per slice) -------------------------------------
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/users', userRouter);
 apiRouter.use('/accounts', accountRouter);
 apiRouter.use('/contacts', contactRouter);
 apiRouter.use('/deals', dealRouter);

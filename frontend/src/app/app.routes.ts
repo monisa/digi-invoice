@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { roleGuard } from './core/auth/role.guard';
 
 export const routes: Routes = [
   {
@@ -82,6 +83,11 @@ export const routes: Routes = [
         path: 'invoices',
         loadComponent: () =>
           import('./features/invoices/invoice-list/invoice-list').then((m) => m.InvoiceList),
+      },
+      {
+        path: 'users',
+        canActivate: [roleGuard('ADMIN', 'SALES_MANAGER')],
+        loadComponent: () => import('./features/users/user-list/user-list').then((m) => m.UserList),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
