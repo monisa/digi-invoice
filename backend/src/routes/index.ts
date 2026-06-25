@@ -13,6 +13,7 @@ import { publicRouter } from './public.routes';
 import { salesOrderRouter } from './salesOrder.routes';
 import { invoiceRouter } from './invoice.routes';
 import { dashboardRouter } from './dashboard.routes';
+import { exchangeRateRouter } from './exchangeRate.routes';
 
 /**
  * API v1 root router. Resource routers (auth, users, accounts, quotes, ...)
@@ -38,6 +39,7 @@ apiRouter.use('/quote-templates', quoteTemplateRouter);
 apiRouter.use('/sales-orders', salesOrderRouter);
 apiRouter.use('/invoices', invoiceRouter);
 apiRouter.use('/dashboard', dashboardRouter);
+apiRouter.use('/exchange-rates', exchangeRateRouter);
 apiRouter.use('/public', publicRouter); // unauthenticated, token-gated
 // apiRouter.use('/users', usersRouter);
 // apiRouter.use('/accounts', accountsRouter);
