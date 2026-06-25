@@ -30,3 +30,17 @@ export const currencyCode = z
   .trim()
   .toUpperCase()
   .length(3, 'Currency must be a 3-letter ISO code');
+
+/** Non-negative monetary amount; accepts number or string, rejects NaN. */
+export const nonNegativeDecimal = z.coerce
+  .number({ invalid_type_error: 'Must be a number' })
+  .min(0, 'Must be zero or greater')
+  .finite('Must be a finite number')
+  .transform((v) => String(v));
+
+/** Tax percentage 0–100; normalised to a string for Prisma Decimal. */
+export const percentage = z.coerce
+  .number({ invalid_type_error: 'Must be a number' })
+  .min(0, 'Percentage cannot be negative')
+  .max(100, 'Percentage cannot exceed 100')
+  .transform((v) => String(v));

@@ -65,8 +65,15 @@ function mapPrismaStatus(code: string): number {
 function prismaMessage(err: Prisma.PrismaClientKnownRequestError): string {
   switch (err.code) {
     case 'P2002': {
-      const target = (err.meta?.target as string[] | undefined)?.join(', ');
-      return target ? `A record with this ${target} already exists` : 'Unique constraint violated';
+      // meta.target is a string (constraint name) on MySQL, a string[] (columns)
+      // on Postgres/SQLite — handle both.
+      const target = err.meta?.target;
+      const label = Array.isArray(target)
+        ? target.join(', ')
+        : typeof target === 'string'
+          ? target
+          : undefined;
+      return label ? `A record with this ${label} already exists` : 'Unique constraint violated';
     }
     case 'P2025':
       return 'Record not found';
