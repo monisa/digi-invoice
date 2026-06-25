@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { sendData } from '../utils/apiResponse';
+import { authRouter } from './auth.routes';
 
 /**
  * API v1 root router. Resource routers (auth, users, accounts, quotes, ...)
@@ -13,7 +14,7 @@ apiRouter.get('/health', (_req, res) => {
 });
 
 // --- Resource routers (added per slice) -------------------------------------
-// apiRouter.use('/auth', authRouter);
+apiRouter.use('/auth', authRouter);
 // apiRouter.use('/users', usersRouter);
 // apiRouter.use('/accounts', accountsRouter);
 // ...
