@@ -1,0 +1,51 @@
+@if (saving()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<h2 mat-dialog-title>{{ isEdit ? 'Edit exchange rate' : 'New exchange rate' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Base currency</mat-label>
+      <input matInput formControlName="baseCurrency" maxlength="3" placeholder="USD" />
+      @if (form.controls.baseCurrency.touched && form.controls.baseCurrency.invalid) {
+        <mat-error>Enter a 3-letter currency code</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Target currency</mat-label>
+      <input matInput formControlName="targetCurrency" maxlength="3" placeholder="EUR" />
+      @if (form.controls.targetCurrency.touched && form.controls.targetCurrency.invalid) {
+        <mat-error>Enter a 3-letter currency code</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Rate</mat-label>
+      <input matInput type="number" min="0" step="0.000001" formControlName="rate" />
+      @if (form.controls.rate.touched && form.controls.rate.invalid) {
+        <mat-error>Enter a positive rate</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Effective date</mat-label>
+      <input matInput type="date" formControlName="effectiveDate" />
+      @if (form.controls.effectiveDate.touched && form.controls.effectiveDate.invalid) {
+        <mat-error>Effective date is required</mat-error>
+      }
+    </mat-form-field>
+
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
+    {{ isEdit ? 'Save' : 'Create' }}
+  </button>
+</mat-dialog-actions>

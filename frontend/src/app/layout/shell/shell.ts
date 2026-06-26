@@ -47,6 +47,7 @@ export class Shell {
     { label: 'Deals', icon: 'monetization_on', route: '/deals', enabled: true },
     { label: 'Products', icon: 'inventory_2', route: '/products', enabled: true },
     { label: 'Tax rates', icon: 'percent', route: '/tax-rates', enabled: true },
+    { label: 'Exchange rates', icon: 'currency_exchange', route: '/exchange-rates', enabled: true },
     { label: 'Quotes', icon: 'description', route: '/quotes', enabled: true },
     { label: 'Templates', icon: 'article', route: '/quote-templates', enabled: true },
     { label: 'Sales orders', icon: 'shopping_cart', route: '/sales-orders', enabled: true },

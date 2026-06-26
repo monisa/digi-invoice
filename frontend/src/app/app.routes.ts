@@ -53,6 +53,13 @@ export const routes: Routes = [
           import('./features/tax-rates/tax-rate-list/tax-rate-list').then((m) => m.TaxRateList),
       },
       {
+        path: 'exchange-rates',
+        loadComponent: () =>
+          import('./features/exchange-rates/exchange-rate-list/exchange-rate-list').then(
+            (m) => m.ExchangeRateList,
+          ),
+      },
+      {
         path: 'quotes',
         loadComponent: () =>
           import('./features/quotes/quote-list/quote-list').then((m) => m.QuoteList),
