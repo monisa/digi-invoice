@@ -5,9 +5,9 @@ const html = z.string().max(20000);
 
 export const createQuoteTemplateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(160),
-  headerHtml: html.optional(),
-  footerHtml: html.optional(),
-  termsHtml: html.optional(),
+  headerHtml: html.nullish(),
+  footerHtml: html.nullish(),
+  termsHtml: html.nullish(),
   isDefault: z.boolean().optional(),
 });
 
