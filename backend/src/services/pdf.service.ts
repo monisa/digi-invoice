@@ -12,6 +12,14 @@ export interface QuotePdfData {
   tenant: { companyName: string };
   /** Optional branding template; HTML is reduced to text for the PDF. */
   template?: { headerHtml?: string | null; footerHtml?: string | null; termsHtml?: string | null } | null;
+  /** Accepted-quote signature, rendered as a sign-off block. */
+  signature?: {
+    signerName: string;
+    signerEmail?: string | null;
+    signedAt?: Date | null;
+    /** Absolute path to the captured signature image, if any. */
+    imageAbsolutePath?: string | null;
+  } | null;
   quote: {
     id: string;
     quoteNumber: string;
@@ -145,6 +153,27 @@ function render(data: QuotePdfData): Promise<Buffer> {
     doc.moveDown(2);
     doc.font('Helvetica-Bold').fontSize(10).fillColor('#000').text('Terms', left, doc.y);
     doc.font('Helvetica').fontSize(9).fillColor('#444').text(termsText, { width: right - left });
+    doc.fillColor('#000');
+  }
+
+  // Signature sign-off block (only when the quote has been signed)
+  if (data.signature) {
+    const sig = data.signature;
+    doc.moveDown(2);
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#000').text('Accepted & signed', left, doc.y);
+    doc.moveDown(0.5);
+    if (sig.imageAbsolutePath) {
+      try {
+        doc.image(sig.imageAbsolutePath, left, doc.y, { fit: [200, 70] });
+        doc.moveDown(5);
+      } catch {
+        // Missing/unreadable image file — fall back to text only.
+      }
+    }
+    doc.font('Helvetica').fontSize(9).fillColor('#333');
+    doc.text(`Signed by: ${sig.signerName}`, left, doc.y);
+    if (sig.signerEmail) doc.text(`Email: ${sig.signerEmail}`);
+    if (sig.signedAt) doc.text(`Date: ${formatDate(sig.signedAt)}`);
     doc.fillColor('#000');
   }
 

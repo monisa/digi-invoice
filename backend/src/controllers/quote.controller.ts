@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import path from 'node:path';
 import type { Request, Response } from 'express';
 import { Prisma, type QuoteStatus } from '@prisma/client';
 import { getAuth, getDb } from '../utils/requestContext';
@@ -453,7 +454,16 @@ const PDF_INCLUDE = {
   contact: { select: { name: true, email: true } },
   tenant: { select: { companyName: true } },
   template: { select: { headerHtml: true, footerHtml: true, termsHtml: true } },
+  signatures: {
+    where: { signedAt: { not: null } },
+    orderBy: { signedAt: 'desc' },
+    take: 1,
+    select: { signerName: true, signerEmail: true, signedAt: true, signatureImagePath: true },
+  },
 } satisfies Prisma.QuoteInclude;
+
+/** Storage root shared with PdfService (backend/storage). */
+const STORAGE_ROOT = path.resolve(__dirname, '../../storage');
 
 type TemplateContent = { headerHtml: string | null; footerHtml: string | null; termsHtml: string | null };
 
@@ -472,9 +482,20 @@ async function resolveTemplate(
 type QuoteWithPdfRelations = Prisma.QuoteGetPayload<{ include: typeof PDF_INCLUDE }>;
 
 function toPdfData(q: QuoteWithPdfRelations, template: TemplateContent | null): QuotePdfData {
+  const signed = q.signatures[0];
   return {
     tenant: { companyName: q.tenant.companyName },
     template,
+    signature: signed
+      ? {
+          signerName: signed.signerName,
+          signerEmail: signed.signerEmail,
+          signedAt: signed.signedAt,
+          imageAbsolutePath: signed.signatureImagePath
+            ? path.resolve(STORAGE_ROOT, signed.signatureImagePath)
+            : null,
+        }
+      : null,
     quote: {
       id: q.id,
       quoteNumber: q.quoteNumber,
