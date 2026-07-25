@@ -46,7 +46,7 @@ is independently testable. Data model source of truth for the port is
 | 1 | Laravel scaffold, DB schema, tenant scoping, JWT auth | done |
 | 2 | CRM (Accounts, Contacts, Deals) | done |
 | 3 | Catalog (Products, Tax Rates) | done |
-| 4 | Quotes (line items, totals, numbering) | not started |
+| 4 | Quotes (line items, totals, numbering) | done |
 | 5 | Quote templates, PDF generation, email | not started |
 | 6 | Approval workflow, public e-signature flow | not started |
 | 7 | Conversion (Quote → Sales Order → Invoice) | not started |
