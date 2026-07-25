@@ -1,66 +1,92 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# digi-invoice — Backend API (PHP/Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 11 + Eloquent, MySQL 8+. JSON REST API under `/api/v1`. This is a
+from-scratch rewrite of the original Node.js/Express/Prisma backend (kept at
+`/backend` for reference), built because the target Hostinger hosting plan
+turned out not to include Node.js app hosting — see `/PHP_MIGRATION.md` at
+the repo root for the full story and slice-by-slice status.
 
-## About Laravel
+The API's URL paths, JSON response envelope, field names (camelCase), status
+codes, and error codes were all built to match the original Node API
+byte-for-byte, so the Angular frontend (`/frontend`) needs no changes.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Setup
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```bash
+cd backend-php
+composer install
+cp .env.example .env
+# edit .env: DB_* (a real MySQL DB), JWT_ACCESS_SECRET / JWT_REFRESH_SECRET
+php artisan key:generate
+php artisan migrate
+php artisan db:seed        # optional: demo tenant + admin user
+php artisan serve          # start on http://127.0.0.1:8000
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Health check: `GET http://127.0.0.1:8000/api/v1/health`
 
-## Learning Laravel
+## Deploying to Hostinger
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+See [`/DEPLOYMENT.md`](../DEPLOYMENT.md) at the repo root for the full
+step-by-step hPanel walkthrough. In short: this runs on plain PHP + MySQL
+shared hosting — no Node.js app hosting, no VPS, no separate service needed.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Architecture
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Concern | Where |
+| --- | --- |
+| Env validation (JWT secrets) | `app/Providers/AppServiceProvider.php` (fails fast at boot) |
+| Response envelope | `app/Support/ApiResponse.php` (`{ data, meta, errors }`) |
+| App errors | `app/Exceptions/ApiException.php` |
+| Central error rendering | `bootstrap/app.php`'s `withExceptions()` |
+| JWT | `app/Services/JwtService.php` (firebase/php-jwt) |
+| Passwords / refresh-token hashing | `app/Services/PasswordService.php` |
+| JWT auth middleware | `app/Http/Middleware/JwtAuthenticate.php` (alias `jwt.auth`) |
+| Tenant scoping | `app/Http/Middleware/TenantScope.php` (alias `tenant.scope`) + `app/Support/TenantContext.php` |
+| RBAC | `app/Http/Middleware/RequireRole.php` (alias `role:X,Y`) |
+| Quote money math | `app/Services/QuoteCalculator.php` (brick/math) |
+| Sequential numbering | `app/Services/QuoteNumberService.php` |
+| PDF generation | `app/Services/QuotePdfService.php` (dompdf + `resources/views/pdf/quote.blade.php`) |
+| Email | `app/Services/QuoteEmailService.php` + `app/Mail/QuoteMail.php` |
 
-## Laravel Sponsors
+### Tenant isolation — read this before adding endpoints
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+`App\Models\Concerns\BelongsToTenant` adds an Eloquent global scope that
+**auto-filters every query and auto-stamps every create** with the current
+tenant, once `TenantScope` middleware has set it (from the verified JWT).
+Every tenant-owned model (`Account`, `Contact`, `Deal`, `Product`, `TaxRate`,
+`Quote`, `QuoteTemplate`, `SalesOrder`, `Invoice`, `ExchangeRate`,
+`QuoteNumberSequence`, `Permission`, `User`) uses this trait — you can write
+plain `Account::find($id)` in a controller and it's already tenant-scoped, no
+manual `where('tenant_id', ...)` needed.
 
-### Premium Partners
+Before a tenant is known (signup/login, which cross the tenant boundary on
+purpose), this is a no-op — those flows filter `tenant_id` explicitly
+themselves. Child records with no `tenant_id` of their own (`QuoteLineItem`,
+`QuoteApproval`, `QuoteSignature`, `QuoteActivityLog`, `RefreshToken`) don't
+use this trait — they're only ever reached through their tenant-scoped
+parent.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### JSON serialization
 
-## Contributing
+Laravel's default JSON output for Eloquent models is snake_case
+(`billing_address`). `App\Models\Concerns\SerializesCamelCase` converts at
+the `toArray()` boundary so the API output is camelCase
+(`billingAddress`), matching the original Prisma-based API — every
+API-facing model uses it. DB columns stay idiomatic snake_case.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Money/decimal columns use Laravel's `decimal:N` cast (which itself uses
+brick/math) so they always serialize as a fixed-precision **string**
+(`"9.99"`, not the bare JSON number `9.99`) regardless of DB driver —
+matching Prisma's `Decimal` → JSON-string behavior.
 
-## Code of Conduct
+## Slices ported (see `/PHP_MIGRATION.md` for detail)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. Foundation: tenant/auth (signup/login/refresh/logout), RBAC
+2. CRM: Accounts, Contacts, Deals
+3. Catalog: Products, Tax Rates
+4. Quotes: line items, server-authoritative totals, sequential numbering
+5. Quote templates, PDF generation, email
+6. Approval workflow, public e-signature flow
+7. Conversion: Quote → Sales Order → Invoice
+8. Users, exchange rates, dashboard metrics
