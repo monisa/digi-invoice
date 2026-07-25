@@ -55,8 +55,7 @@ class QuotePdfService
             'headerHtml' => $fill($template?->header_html),
             'footerHtml' => $fill($template?->footer_html),
             'termsHtml' => $fill($template?->terms_html),
-            // Populated once quote_signatures exists (slice 6).
-            'signature' => null,
+            'signature' => self::signedOffData($quote),
         ])->setPaper('a4');
 
         $binary = $pdf->output();
@@ -65,5 +64,32 @@ class QuotePdfService
         Storage::disk('local')->put($path, $binary);
 
         return ['binary' => $binary, 'path' => $path];
+    }
+
+    /**
+     * The most recent signed-off signature, if any — mirrors PDF_INCLUDE's
+     * signatures filter (signedAt not null, most recent) in quote.controller.ts.
+     * The image is inlined as a data URI so dompdf doesn't need filesystem
+     * access to storage/app/private.
+     */
+    private static function signedOffData(Quote $quote): ?array
+    {
+        $signed = $quote->signatures()->whereNotNull('signed_at')->orderByDesc('signed_at')->first();
+        if (! $signed) {
+            return null;
+        }
+
+        $imageDataUri = null;
+        if ($signed->signature_image_path && Storage::disk('local')->exists($signed->signature_image_path)) {
+            $mime = str_ends_with($signed->signature_image_path, '.jpg') ? 'image/jpeg' : 'image/png';
+            $imageDataUri = 'data:'.$mime.';base64,'.base64_encode(Storage::disk('local')->get($signed->signature_image_path));
+        }
+
+        return [
+            'signerName' => $signed->signer_name,
+            'signerEmail' => $signed->signer_email,
+            'signedAt' => $signed->signed_at?->format('Y-m-d'),
+            'imagePath' => $imageDataUri,
+        ];
     }
 }

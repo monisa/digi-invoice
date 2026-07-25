@@ -97,4 +97,14 @@ class Quote extends Model
     {
         return $this->hasMany(QuoteActivityLog::class)->orderByDesc('created_at');
     }
+
+    public function approvals()
+    {
+        return $this->hasMany(QuoteApproval::class)->orderByDesc('created_at');
+    }
+
+    public function signatures()
+    {
+        return $this->hasMany(QuoteSignature::class)->orderByDesc('created_at');
+    }
 }

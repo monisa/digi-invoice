@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DealController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\QuoteTemplateController;
 use App\Http\Controllers\Api\TaxRateController;
@@ -63,16 +64,24 @@ foreach ([
     });
 }
 
-// Quotes: CRUD + PDF in this slice — workflow transitions (submit/approve/
-// reject/send), signing-link and convert-to-order land in later slices.
-// Mirrors backend/src/routes/quote.routes.ts's WRITE constant.
-Route::prefix('quotes')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($crmWrite) {
+// Quotes: CRUD + PDF + workflow transitions in this slice — convert-to-order
+// lands in slice 7. Mirrors backend/src/routes/quote.routes.ts's WRITE/APPROVE
+// constants (approve/reject are manager+ only; everything else any writer).
+$quoteApprove = 'role:ADMIN,SALES_MANAGER';
+
+Route::prefix('quotes')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($crmWrite, $quoteApprove) {
     Route::get('/', [QuoteController::class, 'index']);
     Route::post('/', [QuoteController::class, 'store'])->middleware($crmWrite);
     Route::get('/{id}', [QuoteController::class, 'show']);
     Route::get('/{id}/pdf', [QuoteController::class, 'pdf']);
     Route::put('/{id}', [QuoteController::class, 'update'])->middleware($crmWrite);
     Route::delete('/{id}', [QuoteController::class, 'destroy'])->middleware($crmWrite);
+
+    Route::post('/{id}/submit-for-approval', [QuoteController::class, 'submitForApproval'])->middleware($crmWrite);
+    Route::post('/{id}/approve', [QuoteController::class, 'approve'])->middleware($quoteApprove);
+    Route::post('/{id}/reject', [QuoteController::class, 'reject'])->middleware($quoteApprove);
+    Route::post('/{id}/send', [QuoteController::class, 'send'])->middleware($crmWrite);
+    Route::post('/{id}/signing-link', [QuoteController::class, 'signingLink'])->middleware($crmWrite);
 });
 
 // Quote templates restricted to admins and sales managers — mirrors
@@ -83,6 +92,15 @@ Route::prefix('quote-templates')->middleware(['jwt.auth', 'tenant.scope'])->grou
     Route::get('/{id}', [QuoteTemplateController::class, 'show']);
     Route::put('/{id}', [QuoteTemplateController::class, 'update'])->middleware($catalogManage);
     Route::delete('/{id}', [QuoteTemplateController::class, 'destroy'])->middleware($catalogManage);
+});
+
+// Public, unauthenticated, token-gated quote signing — access is gated
+// solely by the non-guessable UUID token in the URL. Rate-limited per IP
+// (30/min) to blunt token guessing/abuse — mirrors public.routes.ts.
+Route::prefix('public')->middleware('throttle:30,1')->group(function () {
+    Route::get('/quotes/{token}', [PublicController::class, 'getQuote']);
+    Route::post('/quotes/{token}/sign', [PublicController::class, 'sign']);
+    Route::post('/quotes/{token}/decline', [PublicController::class, 'decline']);
 });
 
 // --- Resource routers (added per slice) -------------------------------------

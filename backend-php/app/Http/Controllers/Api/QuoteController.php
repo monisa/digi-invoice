@@ -8,16 +8,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Quote\CreateQuoteRequest;
 use App\Http\Requests\Quote\ListQuotesRequest;
 use App\Http\Requests\Quote\UpdateQuoteRequest;
+use App\Http\Requests\Quote\WorkflowActionRequest;
 use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\Product;
 use App\Models\Quote;
+use App\Models\QuoteApproval;
 use App\Models\QuoteLineItem;
 use App\Models\QuoteTemplate;
 use App\Models\TaxRate;
 use App\Models\User;
 use App\Services\QuoteCalculator;
+use App\Services\QuoteEmailService;
 use App\Services\QuoteNumberService;
 use App\Services\QuotePdfService;
 use App\Support\ApiResponse;
@@ -25,6 +28,7 @@ use App\Support\AuthContext;
 use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class QuoteController extends Controller
 {
@@ -280,6 +284,154 @@ class QuoteController extends Controller
         return ApiResponse::data(['success' => true]);
     }
 
+    // --- Workflow transitions ------------------------------------------------
+    // State machine:
+    //   DRAFT|REJECTED --submit--> PENDING_APPROVAL
+    //   PENDING_APPROVAL --approve--> APPROVED   (managers/admins)
+    //   PENDING_APPROVAL --reject--> REJECTED    (managers/admins)
+    //   APPROVED|DRAFT --send--> SENT
+
+    public function submitForApproval(string $id, WorkflowActionRequest $request): JsonResponse
+    {
+        $quote = $this->loadQuoteForTransition($id, ['DRAFT', 'REJECTED'], 'submitted for approval');
+        $userId = $this->auth->userId;
+        $comments = $request->validated()['comments'] ?? null;
+
+        DB::transaction(function () use ($quote, $userId, $comments) {
+            QuoteApproval::create([
+                'quote_id' => $quote->id,
+                'requested_by' => $userId,
+                'status' => 'PENDING',
+                'comments' => $comments,
+            ]);
+            $quote->status = 'PENDING_APPROVAL';
+            $quote->save();
+            $quote->activityLog()->create([
+                'user_id' => $userId,
+                'action' => 'submitted_for_approval',
+                'details_json' => $comments ? ['comments' => $comments] : null,
+            ]);
+        });
+
+        return ApiResponse::data($this->quoteWithFullDetail()->find($quote->id));
+    }
+
+    public function approve(string $id, WorkflowActionRequest $request): JsonResponse
+    {
+        return ApiResponse::data($this->actOnApproval($id, $request, 'APPROVED'));
+    }
+
+    public function reject(string $id, WorkflowActionRequest $request): JsonResponse
+    {
+        return ApiResponse::data($this->actOnApproval($id, $request, 'REJECTED'));
+    }
+
+    public function send(string $id): JsonResponse
+    {
+        $quote = $this->loadQuoteForTransition($id, ['APPROVED', 'DRAFT'], 'sent');
+        $userId = $this->auth->userId;
+
+        $full = Quote::with(['lineItems', 'account:id,name', 'contact:id,name,email', 'tenant:id,company_name'])
+            ->find($quote->id);
+        $pdf = QuotePdfService::generate($full);
+
+        $recipient = $full->contact->email ?? null;
+        $email = $recipient
+            ? QuoteEmailService::sendQuote($recipient, $full->tenant->company_name, $full->quote_number, $pdf['binary'])
+            : ['sent' => false, 'skipped' => true, 'reason' => 'no recipient email'];
+
+        // Ensure a non-guessable signing token exists for the public link.
+        $publicToken = $full->public_token ?? (string) Str::uuid();
+
+        DB::transaction(function () use ($full, $userId, $publicToken, $recipient, $email) {
+            $full->status = 'SENT';
+            $full->public_token = $publicToken;
+            $full->save();
+            $full->activityLog()->create([
+                'user_id' => $userId,
+                'action' => 'sent',
+                'details_json' => array_merge(['emailedTo' => $recipient], $email),
+            ]);
+        });
+
+        return ApiResponse::data($this->quoteWithFullDetail()->find($full->id));
+    }
+
+    public function signingLink(string $id): JsonResponse
+    {
+        $this->validateUuidParam($id);
+        $quote = Quote::find($id);
+        if (! $quote) {
+            throw ApiException::notFound('Quote not found');
+        }
+
+        $token = $quote->public_token;
+        if (! $token) {
+            $token = (string) Str::uuid();
+            $quote->public_token = $token;
+            $quote->save();
+        }
+
+        return ApiResponse::data(['token' => $token]);
+    }
+
+    /** Load a tenant-scoped, non-deleted quote and assert it's in an allowed status. */
+    private function loadQuoteForTransition(string $id, array $allowed, string $verb): Quote
+    {
+        $this->validateUuidParam($id);
+        $quote = Quote::find($id);
+        if (! $quote) {
+            throw ApiException::notFound('Quote not found');
+        }
+        if (! in_array($quote->status, $allowed, true)) {
+            throw ApiException::conflict("A {$quote->status} quote cannot be {$verb}");
+        }
+
+        return $quote;
+    }
+
+    /** Approve or reject the pending approval and transition the quote. */
+    private function actOnApproval(string $id, WorkflowActionRequest $request, string $decision): Quote
+    {
+        $verb = $decision === 'APPROVED' ? 'approved' : 'rejected';
+        $quote = $this->loadQuoteForTransition($id, ['PENDING_APPROVAL'], $verb);
+        $userId = $this->auth->userId;
+        $comments = $request->validated()['comments'] ?? null;
+
+        return DB::transaction(function () use ($quote, $userId, $comments, $decision) {
+            $pending = QuoteApproval::where('quote_id', $quote->id)->where('status', 'PENDING')
+                ->orderByDesc('created_at')->first();
+
+            if ($pending) {
+                $pending->status = $decision;
+                $pending->approver_id = $userId;
+                $pending->comments = $comments ?? $pending->comments;
+                $pending->acted_at = now();
+                $pending->save();
+            } else {
+                QuoteApproval::create([
+                    'quote_id' => $quote->id,
+                    'requested_by' => $userId,
+                    'approver_id' => $userId,
+                    'status' => $decision,
+                    'comments' => $comments,
+                    'acted_at' => now(),
+                ]);
+            }
+
+            $quote->status = $decision === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+            $quote->save();
+
+            $quote->activityLog()->create([
+                'user_id' => $userId,
+                'action' => $decision === 'APPROVED' ? 'approved' : 'rejected',
+                'details_json' => $comments ? ['comments' => $comments] : null,
+            ]);
+
+            return $this->quoteWithFullDetail()->find($quote->id);
+        });
+    }
+
     private function quoteWithFullDetail()
     {
         return Quote::with([
@@ -288,6 +440,9 @@ class QuoteController extends Controller
             'contact',
             'owner:id,name,email,role',
             'activityLog',
+            'approvals.requester:id,name',
+            'approvals.approver:id,name',
+            'signatures:id,quote_id,signer_name,signer_email,signed_at',
         ]);
     }
 
