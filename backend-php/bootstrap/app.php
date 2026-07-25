@@ -69,17 +69,27 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (QueryException $e) {
-            // MySQL error codes: 1062 duplicate key, 1451/1452 FK constraint.
+            // Production runs MySQL (1062 duplicate key, 1451/1452 FK
+            // constraint); local/CI may run SQLite (driver code 19, message
+            // text distinguishes unique vs FK) — check both so this behaves
+            // the same on either.
             $code = $e->errorInfo[1] ?? null;
+            $message = $e->getMessage();
 
-            if ($code === 1062) {
+            $isDuplicate = $code === 1062
+                || str_contains($message, 'UNIQUE constraint failed');
+
+            $isForeignKey = in_array($code, [1451, 1452], true)
+                || str_contains($message, 'FOREIGN KEY constraint failed');
+
+            if ($isDuplicate) {
                 return ApiResponse::errors(409, [[
                     'code' => 'DUPLICATE_ENTRY',
                     'message' => 'A record with this value already exists',
                 ]]);
             }
 
-            if (in_array($code, [1451, 1452], true)) {
+            if ($isForeignKey) {
                 return ApiResponse::errors(409, [[
                     'code' => 'FK_CONSTRAINT',
                     'message' => 'Related record constraint violated',

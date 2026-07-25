@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DealController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\TaxRateController;
 use App\Support\ApiResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +41,23 @@ foreach ([
         Route::get('/{id}', [$controller, 'show']);
         Route::put('/{id}', [$controller, 'update'])->middleware($crmWrite);
         Route::delete('/{id}', [$controller, 'destroy'])->middleware($crmWrite);
+    });
+}
+
+// Catalog/pricing config is restricted to admins and sales managers —
+// mirrors backend/src/routes/{product,taxRate}.routes.ts's MANAGE constant.
+$catalogManage = 'role:ADMIN,SALES_MANAGER';
+
+foreach ([
+    'products' => ProductController::class,
+    'tax-rates' => TaxRateController::class,
+] as $prefix => $controller) {
+    Route::prefix($prefix)->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($controller, $catalogManage) {
+        Route::get('/', [$controller, 'index']);
+        Route::post('/', [$controller, 'store'])->middleware($catalogManage);
+        Route::get('/{id}', [$controller, 'show']);
+        Route::put('/{id}', [$controller, 'update'])->middleware($catalogManage);
+        Route::delete('/{id}', [$controller, 'destroy'])->middleware($catalogManage);
     });
 }
 
