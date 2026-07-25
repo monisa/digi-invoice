@@ -26,6 +26,13 @@ class Product extends Model
         'currency' => 'USD',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'unit_price' => 'decimal:2',
+        ];
+    }
+
     public function taxRate()
     {
         return $this->belongsTo(TaxRate::class);

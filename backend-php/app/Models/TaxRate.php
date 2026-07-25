@@ -18,6 +18,13 @@ class TaxRate extends Model
         'percentage',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'percentage' => 'decimal:4',
+        ];
+    }
+
     public function products()
     {
         return $this->hasMany(Product::class);

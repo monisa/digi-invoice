@@ -31,6 +31,11 @@ class Deal extends Model
     {
         return [
             'expected_close_date' => 'date',
+            // Forces a fixed-precision string on every DB driver (PDO_SQLite
+            // returns floats for decimal columns without this; PDO_MySQL
+            // already returns strings, but this keeps behavior identical
+            // regardless of driver) — matches Prisma's Decimal -> JSON string.
+            'amount' => 'decimal:2',
         ];
     }
 
