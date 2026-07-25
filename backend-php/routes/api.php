@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DealController;
+use App\Http\Controllers\Api\ExchangeRateController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PublicController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\QuoteTemplateController;
 use App\Http\Controllers\Api\SalesOrderController;
 use App\Http\Controllers\Api\TaxRateController;
+use App\Http\Controllers\Api\UserController;
 use App\Support\ApiResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -111,6 +114,33 @@ Route::prefix('quote-templates')->middleware(['jwt.auth', 'tenant.scope'])->grou
     Route::put('/{id}', [QuoteTemplateController::class, 'update'])->middleware($catalogManage);
     Route::delete('/{id}', [QuoteTemplateController::class, 'destroy'])->middleware($catalogManage);
 });
+
+// Users: list/get open to admins+managers, mutate admin-only — mirrors
+// backend/src/routes/user.routes.ts's VIEW/ADMIN constants.
+$userView = 'role:ADMIN,SALES_MANAGER';
+$userAdmin = 'role:ADMIN';
+
+Route::prefix('users')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($userView, $userAdmin) {
+    Route::get('/', [UserController::class, 'index'])->middleware($userView);
+    Route::get('/{id}', [UserController::class, 'show'])->middleware($userView);
+    Route::post('/', [UserController::class, 'store'])->middleware($userAdmin);
+    Route::put('/{id}', [UserController::class, 'update'])->middleware($userAdmin);
+    Route::delete('/{id}', [UserController::class, 'destroy'])->middleware($userAdmin);
+});
+
+// Exchange rates: read open to all authenticated, mutate/sync restricted to
+// admins and sales managers — mirrors exchangeRate.routes.ts's MANAGE constant.
+Route::prefix('exchange-rates')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($catalogManage) {
+    Route::get('/', [ExchangeRateController::class, 'index']);
+    Route::get('/latest', [ExchangeRateController::class, 'latest']);
+    Route::post('/', [ExchangeRateController::class, 'store'])->middleware($catalogManage);
+    Route::post('/sync', [ExchangeRateController::class, 'sync'])->middleware($catalogManage);
+    Route::put('/{id}', [ExchangeRateController::class, 'update'])->middleware($catalogManage);
+    Route::delete('/{id}', [ExchangeRateController::class, 'destroy'])->middleware($catalogManage);
+});
+
+// Any authenticated tenant user may view dashboard metrics.
+Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->middleware(['jwt.auth', 'tenant.scope']);
 
 // Public, unauthenticated, token-gated quote signing — access is gated
 // solely by the non-guessable UUID token in the URL. Rate-limited per IP
