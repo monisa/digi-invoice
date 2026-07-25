@@ -14,10 +14,12 @@ use App\Models\Deal;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\QuoteLineItem;
+use App\Models\QuoteTemplate;
 use App\Models\TaxRate;
 use App\Models\User;
 use App\Services\QuoteCalculator;
 use App\Services\QuoteNumberService;
+use App\Services\QuotePdfService;
 use App\Support\ApiResponse;
 use App\Support\AuthContext;
 use App\Support\Pagination;
@@ -239,6 +241,23 @@ class QuoteController extends Controller
         return ApiResponse::data($this->quoteWithFullDetail()->find($existing->id));
     }
 
+    public function pdf(string $id): \Illuminate\Http\Response
+    {
+        $this->validateUuidParam($id);
+
+        $quote = Quote::find($id);
+        if (! $quote) {
+            throw ApiException::notFound('Quote not found');
+        }
+
+        $binary = QuotePdfService::generate($quote)['binary'];
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$quote->quote_number}.pdf\"",
+        ]);
+    }
+
     public function destroy(string $id): JsonResponse
     {
         $this->validateUuidParam($id);
@@ -320,8 +339,8 @@ class QuoteController extends Controller
             'accountId' => fn ($id) => Account::find($id),
             'contactId' => fn ($id) => Contact::find($id),
             'dealId' => fn ($id) => Deal::find($id),
+            'templateId' => fn ($id) => QuoteTemplate::find($id),
             'ownerId' => fn ($id) => User::find($id),
-            // templateId existence check lands in slice 5 once QuoteTemplate exists.
         ];
         foreach ($checks as $field => $lookup) {
             if (! empty($refs[$field]) && ! $lookup($refs[$field])) {

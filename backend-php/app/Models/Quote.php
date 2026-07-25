@@ -58,6 +58,11 @@ class Quote extends Model
         ];
     }
 
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     public function account()
     {
         return $this->belongsTo(Account::class);
@@ -76,6 +81,11 @@ class Quote extends Model
     public function owner()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(QuoteTemplate::class, 'template_id');
     }
 
     public function lineItems()

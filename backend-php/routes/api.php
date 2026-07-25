@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DealController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\QuoteTemplateController;
 use App\Http\Controllers\Api\TaxRateController;
 use App\Support\ApiResponse;
 use Illuminate\Support\Facades\Route;
@@ -62,15 +63,26 @@ foreach ([
     });
 }
 
-// Quotes: CRUD only in this slice — workflow transitions (submit/approve/
-// reject/send), PDF, signing-link and convert-to-order land in later slices.
+// Quotes: CRUD + PDF in this slice — workflow transitions (submit/approve/
+// reject/send), signing-link and convert-to-order land in later slices.
 // Mirrors backend/src/routes/quote.routes.ts's WRITE constant.
 Route::prefix('quotes')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($crmWrite) {
     Route::get('/', [QuoteController::class, 'index']);
     Route::post('/', [QuoteController::class, 'store'])->middleware($crmWrite);
     Route::get('/{id}', [QuoteController::class, 'show']);
+    Route::get('/{id}/pdf', [QuoteController::class, 'pdf']);
     Route::put('/{id}', [QuoteController::class, 'update'])->middleware($crmWrite);
     Route::delete('/{id}', [QuoteController::class, 'destroy'])->middleware($crmWrite);
+});
+
+// Quote templates restricted to admins and sales managers — mirrors
+// backend/src/routes/quoteTemplate.routes.ts's MANAGE constant.
+Route::prefix('quote-templates')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($catalogManage) {
+    Route::get('/', [QuoteTemplateController::class, 'index']);
+    Route::post('/', [QuoteTemplateController::class, 'store'])->middleware($catalogManage);
+    Route::get('/{id}', [QuoteTemplateController::class, 'show']);
+    Route::put('/{id}', [QuoteTemplateController::class, 'update'])->middleware($catalogManage);
+    Route::delete('/{id}', [QuoteTemplateController::class, 'destroy'])->middleware($catalogManage);
 });
 
 // --- Resource routers (added per slice) -------------------------------------
