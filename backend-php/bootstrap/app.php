@@ -42,7 +42,14 @@ return Application::configure(basePath: dirname(__DIR__))
             $errors = [];
             foreach ($e->errors() as $field => $messages) {
                 foreach ($messages as $message) {
-                    $errors[] = ['code' => 'VALIDATION_ERROR', 'message' => $message, 'field' => $field];
+                    // '_' is this app's sentinel for path-less errors (e.g. the
+                    // "at least one field" refine) — omit "field" for those,
+                    // matching the Node API's `field: path.join('.') || undefined`.
+                    $errors[] = array_filter(
+                        ['code' => 'VALIDATION_ERROR', 'message' => $message, 'field' => $field],
+                        fn ($v, $k) => $k !== 'field' || $v !== '_',
+                        ARRAY_FILTER_USE_BOTH,
+                    );
                 }
             }
 

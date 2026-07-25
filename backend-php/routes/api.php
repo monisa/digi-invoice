@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\DealController;
 use App\Support\ApiResponse;
 use Illuminate\Support\Facades\Route;
 
 /**
  * API v1 root router (apiPrefix set to 'api/v1' in bootstrap/app.php).
- * Resource routers (users, accounts, quotes, ...) are mounted here in
- * subsequent build slices, protected by ['jwt.auth', 'tenant.scope'].
+ * Resource routers (users, quotes, ...) are mounted here in subsequent
+ * build slices, protected by ['jwt.auth', 'tenant.scope'].
  */
 
 // Liveness/readiness probe — unauthenticated.
@@ -21,8 +24,23 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
+// Roles permitted to mutate CRM data (Viewer is read-only) — mirrors
+// backend/src/routes/{account,contact,deal}.routes.ts's WRITE constant.
+$crmWrite = 'role:ADMIN,SALES_MANAGER,SALES_REP';
+
+foreach ([
+    'accounts' => AccountController::class,
+    'contacts' => ContactController::class,
+    'deals' => DealController::class,
+] as $prefix => $controller) {
+    Route::prefix($prefix)->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($controller, $crmWrite) {
+        Route::get('/', [$controller, 'index']);
+        Route::post('/', [$controller, 'store'])->middleware($crmWrite);
+        Route::get('/{id}', [$controller, 'show']);
+        Route::put('/{id}', [$controller, 'update'])->middleware($crmWrite);
+        Route::delete('/{id}', [$controller, 'destroy'])->middleware($crmWrite);
+    });
+}
+
 // --- Resource routers (added per slice) -------------------------------------
-// Route::middleware(['jwt.auth', 'tenant.scope'])->group(function () {
-//     Route::apiResource('accounts', AccountController::class);
-//     ...
-// });
+// Route::middleware(['jwt.auth', 'tenant.scope'])->group(function () { ... });

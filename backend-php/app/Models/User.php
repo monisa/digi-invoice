@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\SerializesCamelCase;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    use BelongsToTenant, HasUuids, SerializesCamelCase, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',

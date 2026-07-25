@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SerializesCamelCase;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class Tenant extends Model
 {
-    use HasUuids;
+    use HasUuids, SerializesCamelCase;
 
     protected $fillable = [
         'company_name',
