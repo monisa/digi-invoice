@@ -17,6 +17,7 @@ use App\Models\Quote;
 use App\Models\QuoteApproval;
 use App\Models\QuoteLineItem;
 use App\Models\QuoteTemplate;
+use App\Models\SalesOrder;
 use App\Models\TaxRate;
 use App\Models\User;
 use App\Services\QuoteCalculator;
@@ -373,6 +374,44 @@ class QuoteController extends Controller
         }
 
         return ApiResponse::data(['token' => $token]);
+    }
+
+    public function convertToOrder(string $id): JsonResponse
+    {
+        $this->validateUuidParam($id);
+        $tenantId = $this->auth->tenantId;
+        $userId = $this->auth->userId;
+
+        $quote = Quote::find($id);
+        if (! $quote) {
+            throw ApiException::notFound('Quote not found');
+        }
+        if (! in_array($quote->status, ['ACCEPTED', 'APPROVED'], true)) {
+            throw ApiException::conflict("A {$quote->status} quote cannot be converted to an order");
+        }
+        if (SalesOrder::where('quote_id', $quote->id)->exists()) {
+            throw ApiException::conflict('This quote has already been converted to an order');
+        }
+
+        $order = DB::transaction(function () use ($quote, $tenantId, $userId) {
+            $orderNumber = QuoteNumberService::next($tenantId, 'SO');
+
+            $created = SalesOrder::create([
+                'quote_id' => $quote->id,
+                'order_number' => $orderNumber,
+                'status' => 'OPEN',
+            ]);
+
+            $quote->activityLog()->create([
+                'user_id' => $userId,
+                'action' => 'converted_to_order',
+                'details_json' => ['orderNumber' => $orderNumber],
+            ]);
+
+            return $created;
+        });
+
+        return ApiResponse::data($order->load('quote:id,quote_number,currency,grand_total'), 201);
     }
 
     /** Load a tenant-scoped, non-deleted quote and assert it's in an allowed status. */

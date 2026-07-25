@@ -107,4 +107,9 @@ class Quote extends Model
     {
         return $this->hasMany(QuoteSignature::class)->orderByDesc('created_at');
     }
+
+    public function salesOrders()
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
 }

@@ -4,10 +4,12 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DealController;
+use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\QuoteTemplateController;
+use App\Http\Controllers\Api\SalesOrderController;
 use App\Http\Controllers\Api\TaxRateController;
 use App\Support\ApiResponse;
 use Illuminate\Support\Facades\Route;
@@ -64,9 +66,9 @@ foreach ([
     });
 }
 
-// Quotes: CRUD + PDF + workflow transitions in this slice — convert-to-order
-// lands in slice 7. Mirrors backend/src/routes/quote.routes.ts's WRITE/APPROVE
-// constants (approve/reject are manager+ only; everything else any writer).
+// Quotes: full CRUD + PDF + workflow transitions + conversion. Mirrors
+// backend/src/routes/quote.routes.ts's WRITE/APPROVE constants (approve/
+// reject/convert-to-order are manager+ only; everything else any writer).
 $quoteApprove = 'role:ADMIN,SALES_MANAGER';
 
 Route::prefix('quotes')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($crmWrite, $quoteApprove) {
@@ -82,6 +84,22 @@ Route::prefix('quotes')->middleware(['jwt.auth', 'tenant.scope'])->group(functio
     Route::post('/{id}/reject', [QuoteController::class, 'reject'])->middleware($quoteApprove);
     Route::post('/{id}/send', [QuoteController::class, 'send'])->middleware($crmWrite);
     Route::post('/{id}/signing-link', [QuoteController::class, 'signingLink'])->middleware($crmWrite);
+    Route::post('/{id}/convert-to-order', [QuoteController::class, 'convertToOrder'])->middleware($quoteApprove);
+});
+
+// Sales orders / invoices restricted to admins and sales managers — mirrors
+// backend/src/routes/{salesOrder,invoice}.routes.ts's MANAGE constant.
+Route::prefix('sales-orders')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($catalogManage) {
+    Route::get('/', [SalesOrderController::class, 'index']);
+    Route::get('/{id}', [SalesOrderController::class, 'show']);
+    Route::patch('/{id}/status', [SalesOrderController::class, 'updateStatus'])->middleware($catalogManage);
+    Route::post('/{id}/convert-to-invoice', [SalesOrderController::class, 'convertToInvoice'])->middleware($catalogManage);
+});
+
+Route::prefix('invoices')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($catalogManage) {
+    Route::get('/', [InvoiceController::class, 'index']);
+    Route::get('/{id}', [InvoiceController::class, 'show']);
+    Route::patch('/{id}/status', [InvoiceController::class, 'updateStatus'])->middleware($catalogManage);
 });
 
 // Quote templates restricted to admins and sales managers — mirrors
