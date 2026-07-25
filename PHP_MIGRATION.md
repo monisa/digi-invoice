@@ -50,7 +50,7 @@ is independently testable. Data model source of truth for the port is
 | 5 | Quote templates, PDF generation, email | done |
 | 6 | Approval workflow, public e-signature flow | done |
 | 7 | Conversion (Quote → Sales Order → Invoice) | done |
-| 8 | Users, exchange rates, dashboard | not started |
+| 8 | Users, exchange rates, dashboard | done |
 | 9 | Point Angular frontend at the PHP backend, update deploy docs | not started |
 
 Once slice 9 is done and the PHP backend has full parity, `/backend` (Node)
