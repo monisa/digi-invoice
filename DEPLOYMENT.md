@@ -153,6 +153,11 @@ Angular's JS/CSS and Laravel's own public assets) are served directly,
 to Angular's `index.html` for client-side routing:
 
 ```apache
+# Without this, a request for "/" hits Apache's default DirectoryIndex
+# priority (index.php before index.html) and serves Laravel instead of
+# the Angular shell, bypassing the rewrite rules below entirely.
+DirectoryIndex index.html index.php
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
