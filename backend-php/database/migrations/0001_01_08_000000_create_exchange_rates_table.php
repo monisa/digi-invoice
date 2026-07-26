@@ -17,7 +17,7 @@ return new class extends Migration
             $table->date('effective_date');
             $table->timestamp('created_at')->useCurrent();
 
-            $table->unique(['tenant_id', 'base_currency', 'target_currency', 'effective_date']);
+            $table->unique(['tenant_id', 'base_currency', 'target_currency', 'effective_date'], 'exchange_rates_tenant_currency_date_unique');
             $table->index('tenant_id');
         });
     }
