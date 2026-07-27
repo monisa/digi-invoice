@@ -34,12 +34,14 @@
   position: relative;
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--mat-sys-surface);
 }
 
 .full-width {
   width: 100%;
+  min-width: max-content;
 }
 
 .actions-col {
