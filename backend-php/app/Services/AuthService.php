@@ -7,6 +7,7 @@ use App\Models\RefreshToken;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -31,11 +32,13 @@ class AuthService
         }
 
         $passwordHash = $this->password->hash($input['password']);
+        $logoPath = $this->saveLogoImage($input['logo']);
 
-        [$tenant, $user] = DB::transaction(function () use ($input, $passwordHash) {
+        [$tenant, $user] = DB::transaction(function () use ($input, $passwordHash, $logoPath) {
             $tenant = Tenant::create([
                 'company_name' => $input['companyName'],
                 'subdomain' => $input['subdomain'],
+                'logo_path' => $logoPath,
             ]);
 
             $user = User::create([
@@ -144,6 +147,31 @@ class AuthService
 
     private function publicTenant(Tenant $tenant): array
     {
-        return ['id' => $tenant->id, 'companyName' => $tenant->company_name, 'subdomain' => $tenant->subdomain];
+        return [
+            'id' => $tenant->id,
+            'companyName' => $tenant->company_name,
+            'subdomain' => $tenant->subdomain,
+            'logoDataUri' => $tenant->logoDataUri(),
+        ];
+    }
+
+    /** Mirrors PublicController::saveSignatureImage's base64-data-URL pattern. */
+    private function saveLogoImage(string $dataUrl): string
+    {
+        if (! preg_match('/^data:image\/(png|jpeg);base64,(.+)$/s', $dataUrl, $m)) {
+            throw ApiException::badRequest('Invalid logo image', 'logo');
+        }
+        [, $mime, $b64] = $m;
+
+        $binary = base64_decode($b64, true);
+        if ($binary === false || strlen($binary) > 2 * 1024 * 1024) {
+            throw ApiException::badRequest('Logo image must be a PNG or JPEG under 2MB', 'logo');
+        }
+
+        $file = Str::uuid().'.'.($mime === 'jpeg' ? 'jpg' : 'png');
+        $path = "logos/{$file}";
+        Storage::disk('local')->put($path, $binary);
+
+        return $path;
     }
 }

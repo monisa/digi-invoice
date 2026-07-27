@@ -20,7 +20,7 @@ class QuotePdfService
     public static function generate(Quote $quote): array
     {
         $quote->loadMissing([
-            'lineItems', 'account:id,name', 'contact:id,name,email', 'tenant:id,company_name',
+            'lineItems', 'account:id,name', 'contact:id,name,email', 'tenant:id,company_name,logo_path',
         ]);
 
         $template = $quote->template_id
@@ -52,6 +52,7 @@ class QuotePdfService
         $pdf = Pdf::loadView('pdf.quote', [
             'quote' => $quote,
             'tenantCompanyName' => $quote->tenant->company_name,
+            'tenantLogoDataUri' => $quote->tenant->logoDataUri(),
             'headerHtml' => $fill($template?->header_html),
             'footerHtml' => $fill($template?->footer_html),
             'termsHtml' => $fill($template?->terms_html),

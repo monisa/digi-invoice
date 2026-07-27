@@ -3,6 +3,9 @@
     <mat-icon>menu</mat-icon>
   </button>
   <span class="brand">digi-invoice</span>
+  @if (tenant()?.logoDataUri) {
+    <img [src]="tenant()!.logoDataUri" class="tenant-logo" [alt]="tenant()?.companyName" />
+  }
   <span class="tenant">{{ tenant()?.companyName }}</span>
   <span class="spacer"></span>
 

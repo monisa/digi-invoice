@@ -34,6 +34,46 @@ button[type='submit'] {
   font-size: 0.9rem;
 }
 
+.logo-field {
+  margin: 4px 0 12px;
+}
+
+.logo-label {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.logo-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-preview,
+.logo-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: contain;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container);
+}
+
+.logo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+
+.logo-error {
+  color: var(--mat-sys-error);
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+}
+
 mat-card-actions {
   display: flex;
   align-items: center;

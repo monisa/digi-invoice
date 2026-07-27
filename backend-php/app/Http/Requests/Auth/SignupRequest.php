@@ -31,6 +31,7 @@ class SignupRequest extends FormRequest
             'adminName' => ['required', 'string', 'max:120'],
             'adminEmail' => ['required', 'email'],
             'password' => ['required', 'string', 'min:8', 'max:128'],
+            'logo' => ['required', 'string'],
         ];
     }
 
@@ -39,6 +40,7 @@ class SignupRequest extends FormRequest
         return [
             'subdomain.regex' => 'Subdomain may contain only lowercase letters, numbers and hyphens',
             'adminEmail.email' => 'A valid email is required',
+            'logo.required' => 'A company logo is required',
         ];
     }
 }

@@ -51,6 +51,34 @@
           }
         </mat-form-field>
 
+        <div class="logo-field">
+          <label class="logo-label">Company logo</label>
+          <div class="logo-picker">
+            @if (logoPreview()) {
+              <img [src]="logoPreview()" class="logo-preview" alt="Logo preview" />
+            } @else {
+              <div class="logo-placeholder">
+                <mat-icon>image</mat-icon>
+              </div>
+            }
+            <button mat-stroked-button type="button" (click)="logoInput.click()">
+              {{ logoPreview() ? 'Change logo' : 'Upload logo' }}
+            </button>
+            <input
+              #logoInput
+              type="file"
+              accept="image/png,image/jpeg"
+              hidden
+              (change)="onLogoSelected($event)"
+            />
+          </div>
+          @if (logoError()) {
+            <p class="logo-error">{{ logoError() }}</p>
+          } @else if (form.controls.logo.touched && form.controls.logo.invalid) {
+            <p class="logo-error">A company logo is required</p>
+          }
+        </div>
+
         @if (error()) {
           <p class="auth-error">{{ error() }}</p>
         }

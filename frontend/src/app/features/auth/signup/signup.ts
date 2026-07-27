@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/auth/auth.service';
 import { extractApiError } from '../../../core/utils/api-error';
 
@@ -21,6 +22,7 @@ import { extractApiError } from '../../../core/utils/api-error';
     MatInputModule,
     MatButtonModule,
     MatProgressBarModule,
+    MatIconModule,
   ],
   templateUrl: './signup.html',
   styleUrl: './signup.scss',
@@ -32,6 +34,10 @@ export class Signup {
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly logoPreview = signal<string | null>(null);
+  readonly logoError = signal<string | null>(null);
+
+  private static readonly MAX_LOGO_BYTES = 2 * 1024 * 1024;
 
   readonly form = this.fb.nonNullable.group({
     companyName: ['', Validators.required],
@@ -42,7 +48,33 @@ export class Signup {
     adminName: ['', Validators.required],
     adminEmail: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
+    logo: ['', Validators.required],
   });
+
+  onLogoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    this.logoError.set(null);
+
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      this.logoError.set('Logo must be a PNG or JPEG image');
+      return;
+    }
+    if (file.size > Signup.MAX_LOGO_BYTES) {
+      this.logoError.set('Logo must be under 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      this.form.controls.logo.setValue(dataUrl);
+      this.logoPreview.set(dataUrl);
+    };
+    reader.onerror = () => this.logoError.set('Could not read that file');
+    reader.readAsDataURL(file);
+  }
 
   submit(): void {
     if (this.form.invalid || this.loading()) {

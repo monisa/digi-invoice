@@ -1,4 +1,5 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import type { UserRole } from '../../core/models/auth.model';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -36,9 +37,19 @@ interface NavItem {
 })
 export class Shell {
   private readonly auth = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
 
   readonly user = this.auth.currentUser;
   readonly tenant = this.auth.currentTenant;
+
+  constructor() {
+    effect(() => {
+      const logo = this.tenant()?.logoDataUri;
+      if (!logo) return;
+      const link = this.document.getElementById('app-favicon') as HTMLLinkElement | null;
+      if (link) link.href = logo;
+    });
+  }
 
   private readonly allNav: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', enabled: true },

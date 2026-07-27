@@ -16,6 +16,14 @@
   font-weight: 600;
 }
 
+.tenant-logo {
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #fff;
+}
+
 .tenant {
   opacity: 0.85;
   font-size: 0.9rem;

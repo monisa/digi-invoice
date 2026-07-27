@@ -6,6 +6,7 @@
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #000; }
     .header-row { width: 100%; overflow: hidden; margin-bottom: 20px; }
     .company-name { float: left; font-size: 20px; font-weight: bold; }
+    .company-logo { float: left; max-height: 50px; max-width: 200px; }
     .quote-meta { float: right; text-align: right; font-size: 10px; }
     .quote-meta .title { font-size: 16px; color: #555; margin-bottom: 4px; }
     .bill-to { margin: 24px 0; }
@@ -31,7 +32,11 @@
 </head>
 <body>
     <div class="header-row">
-        <div class="company-name">{{ $tenantCompanyName }}</div>
+        @if($tenantLogoDataUri)
+            <img class="company-logo" src="{{ $tenantLogoDataUri }}" alt="{{ $tenantCompanyName }}">
+        @else
+            <div class="company-name">{{ $tenantCompanyName }}</div>
+        @endif
         <div class="quote-meta">
             <div class="title">QUOTE</div>
             <div>Quote #: {{ $quote->quote_number }}</div>
