@@ -39,10 +39,6 @@ export const routes: Routes = [
           import('./features/contacts/contact-list/contact-list').then((m) => m.ContactList),
       },
       {
-        path: 'deals',
-        loadComponent: () => import('./features/deals/deal-list/deal-list').then((m) => m.DealList),
-      },
-      {
         path: 'products',
         loadComponent: () =>
           import('./features/products/product-list/product-list').then((m) => m.ProductList),
@@ -90,6 +86,21 @@ export const routes: Routes = [
         path: 'invoices',
         loadComponent: () =>
           import('./features/invoices/invoice-list/invoice-list').then((m) => m.InvoiceList),
+      },
+      {
+        path: 'invoices/new',
+        loadComponent: () =>
+          import('./features/invoices/invoice-form/invoice-form').then((m) => m.InvoiceForm),
+      },
+      {
+        path: 'invoices/:id',
+        loadComponent: () =>
+          import('./features/invoices/invoice-detail/invoice-detail').then((m) => m.InvoiceDetail),
+      },
+      {
+        path: 'invoices/:id/edit',
+        loadComponent: () =>
+          import('./features/invoices/invoice-form/invoice-form').then((m) => m.InvoiceForm),
       },
       {
         path: 'quote-templates',

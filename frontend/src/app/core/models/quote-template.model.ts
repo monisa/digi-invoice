@@ -1,6 +1,11 @@
+export type TemplateAppliesTo = 'QUOTE' | 'INVOICE' | 'BOTH';
+
+export const TEMPLATE_APPLIES_TO: TemplateAppliesTo[] = ['QUOTE', 'INVOICE', 'BOTH'];
+
 export interface QuoteTemplate {
   id: string;
   name: string;
+  appliesTo: TemplateAppliesTo;
   headerHtml?: string | null;
   footerHtml?: string | null;
   termsHtml?: string | null;

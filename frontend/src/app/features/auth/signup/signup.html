@@ -19,6 +19,25 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>Business address (optional)</mat-label>
+          <input matInput formControlName="companyAddress" />
+          <mat-hint>Shown on Quote/Invoice PDFs</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Business phone (optional)</mat-label>
+          <input matInput formControlName="companyPhone" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Business email (optional)</mat-label>
+          <input matInput type="email" formControlName="companyEmail" />
+          @if (form.controls.companyEmail.touched && form.controls.companyEmail.invalid) {
+            <mat-error>Enter a valid email</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Subdomain</mat-label>
           <input matInput formControlName="subdomain" placeholder="acme" />
           <mat-hint>Lowercase letters, numbers and hyphens</mat-hint>
@@ -50,6 +69,34 @@
             <mat-error>At least 8 characters</mat-error>
           }
         </mat-form-field>
+
+        <div class="logo-field">
+          <label class="logo-label">Company logo</label>
+          <div class="logo-picker">
+            @if (logoPreview()) {
+              <img [src]="logoPreview()" class="logo-preview" alt="Logo preview" />
+            } @else {
+              <div class="logo-placeholder">
+                <mat-icon>image</mat-icon>
+              </div>
+            }
+            <button mat-stroked-button type="button" (click)="logoInput.click()">
+              {{ logoPreview() ? 'Change logo' : 'Upload logo' }}
+            </button>
+            <input
+              #logoInput
+              type="file"
+              accept="image/png,image/jpeg"
+              hidden
+              (change)="onLogoSelected($event)"
+            />
+          </div>
+          @if (logoError()) {
+            <p class="logo-error">{{ logoError() }}</p>
+          } @else if (form.controls.logo.touched && form.controls.logo.invalid) {
+            <p class="logo-error">A company logo is required</p>
+          }
+        </div>
 
         @if (error()) {
           <p class="auth-error">{{ error() }}</p>

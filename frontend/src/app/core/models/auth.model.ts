@@ -11,6 +11,7 @@ export interface AuthTenant {
   id: string;
   companyName: string;
   subdomain: string;
+  logoDataUri: string | null;
 }
 
 export interface AuthTokens {
@@ -33,8 +34,12 @@ export interface LoginRequest {
 
 export interface SignupRequest {
   companyName: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
   subdomain: string;
   adminName: string;
   adminEmail: string;
   password: string;
+  logo: string;
 }

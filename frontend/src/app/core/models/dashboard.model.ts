@@ -16,6 +16,7 @@ export interface DashboardSummary {
   acceptedValue: string;
   winRate: number;
   expiringSoon: number;
+  invoicedValue: string;
   invoices: {
     total: number;
     outstanding: number;

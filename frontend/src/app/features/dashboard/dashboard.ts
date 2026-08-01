@@ -34,7 +34,7 @@ export class Dashboard {
     if (!s) return [];
     return [
       { label: 'Open quotes', value: String(s.quotes.open), icon: 'description' },
-      { label: 'Pipeline value', value: s.pipelineValue, icon: 'trending_up' },
+      { label: 'Invoiced amount', value: s.invoicedValue, icon: 'receipt_long' },
       { label: 'Win rate', value: `${s.winRate}%`, icon: 'emoji_events' },
       { label: 'Expiring in 7 days', value: String(s.expiringSoon), icon: 'schedule' },
     ];

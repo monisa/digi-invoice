@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { CrudService } from '../../core/api/crud.service';
 import type { ApiEnvelope } from '../../core/models/api.model';
-import type { Invoice, SalesOrder, SalesOrderStatus } from '../../core/models/conversion.model';
+import type { SalesOrder, SalesOrderStatus } from '../../core/models/conversion.model';
+import type { Invoice } from '../../core/models/invoice.model';
 
 @Injectable({ providedIn: 'root' })
 export class SalesOrdersService extends CrudService<SalesOrder> {

@@ -14,6 +14,15 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
+      <mat-label>Applies to</mat-label>
+      <mat-select formControlName="appliesTo">
+        <mat-option value="QUOTE">Quotes</mat-option>
+        <mat-option value="INVOICE">Invoices</mat-option>
+        <mat-option value="BOTH">Both</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
       <mat-label>Header HTML</mat-label>
       <textarea matInput formControlName="headerHtml" rows="3"></textarea>
     </mat-form-field>

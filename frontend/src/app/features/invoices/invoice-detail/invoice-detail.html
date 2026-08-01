@@ -1,0 +1,114 @@
+@if (loading() || acting()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (error()) {
+  <mat-card class="section">
+    <mat-card-content>
+      <p>{{ error() }}</p>
+      <a mat-button routerLink="/invoices">Back to invoices</a>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (invoice(); as inv) {
+  <header class="detail-head">
+    <div>
+      <h1>{{ inv.invoiceNumber }}</h1>
+      <span class="status-chip" [class]="statusClass(inv.status)">{{ statusLabel(inv.status) }}</span>
+    </div>
+    <div class="actions">
+      <a mat-button routerLink="/invoices">
+        <mat-icon>arrow_back</mat-icon>
+        Back
+      </a>
+      <button mat-stroked-button (click)="downloadPdf()" [disabled]="acting()">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
+      </button>
+      @if (canManageStatus) {
+        <button mat-stroked-button [matMenuTriggerFor]="statusMenu" [disabled]="acting()">
+          <mat-icon>sync</mat-icon>
+          Set status
+        </button>
+        <mat-menu #statusMenu="matMenu">
+          @for (s of statuses; track s) {
+            <button mat-menu-item (click)="setStatus(s)" [disabled]="inv.status === s">{{ statusLabel(s) }}</button>
+          }
+        </mat-menu>
+      }
+      @if (canEdit()) {
+        <a mat-stroked-button [routerLink]="['/invoices', inv.id, 'edit']">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </a>
+      }
+      @if (canDelete()) {
+        <button mat-stroked-button color="warn" (click)="confirmDelete()">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      }
+    </div>
+  </header>
+
+  <mat-card class="section">
+    <mat-card-content class="meta-grid">
+      <div><span class="k">Account</span><span>{{ inv.account?.name || '—' }}</span></div>
+      <div><span class="k">Contact</span><span>{{ inv.contact?.name || '—' }}</span></div>
+      <div><span class="k">Owner</span><span>{{ inv.owner?.name || '—' }}</span></div>
+      <div><span class="k">Currency</span><span>{{ inv.currency }}</span></div>
+      <div>
+        <span class="k">Due date</span>
+        <span>{{ inv.dueDate ? (inv.dueDate | date: 'mediumDate') : '—' }}</span>
+      </div>
+      @if (inv.salesOrder) {
+        <div><span class="k">Sales order</span><span>{{ inv.salesOrder.orderNumber }}</span></div>
+      }
+      <div><span class="k">Created</span><span>{{ inv.createdAt | date: 'medium' }}</span></div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Line items</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="table-wrap">
+        <table mat-table [dataSource]="inv.lineItems ?? []" class="full-width">
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let l">{{ l.description || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="quantity">
+            <th mat-header-cell *matHeaderCellDef class="num">Qty</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.quantity }}</td>
+          </ng-container>
+          <ng-container matColumnDef="unitPrice">
+            <th mat-header-cell *matHeaderCellDef class="num">Unit price</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.unitPrice }}</td>
+          </ng-container>
+          <ng-container matColumnDef="discountPct">
+            <th mat-header-cell *matHeaderCellDef class="num">Disc %</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.discountPct }}</td>
+          </ng-container>
+          <ng-container matColumnDef="lineTotal">
+            <th mat-header-cell *matHeaderCellDef class="num">Line total</th>
+            <td mat-cell *matCellDef="let l" class="num">{{ l.lineTotal }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="lineColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: lineColumns"></tr>
+        </table>
+      </div>
+
+      <dl class="totals">
+        <dt>Subtotal</dt>
+        <dd>{{ inv.subtotal }}</dd>
+        <dt>Discount</dt>
+        <dd>−{{ inv.discountTotal }}</dd>
+        <dt>Tax</dt>
+        <dd>{{ inv.taxTotal }}</dd>
+        <dt class="grand">Grand total</dt>
+        <dd class="grand">{{ inv.grandTotal }} {{ inv.currency }}</dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+}

@@ -7,22 +7,27 @@
 @use '@angular/material' as mat;
 
 html {
+  // theme-type: color-scheme generates tokens via the CSS light-dark()
+  // function, so the same stylesheet serves both modes — switching is just
+  // toggling `color-scheme` (see .dark-theme below), no duplicate mixin call.
   @include mat.theme((
     color: (
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
+      theme-type: color-scheme,
+      primary: mat.$violet-palette,
+      tertiary: mat.$orange-palette,
     ),
     typography: Roboto,
     density: 0,
   ));
+
+  color-scheme: light;
+}
+
+html.dark-theme {
+  color-scheme: dark;
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
-
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
@@ -37,3 +42,55 @@ body {
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+// Material Symbols Rounded — a more modern icon style than the classic
+// filled Material Icons. Variable-font axes tuned for a slightly bolder,
+// clearer weight than the font's own defaults.
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+// Shared table convention used across feature pages: a `.table-wrap` div
+// around a `.full-width` mat-table. min-width: max-content keeps columns
+// from being crushed on narrow viewports, so overflow-x can actually
+// engage instead of the table just shrinking to fit.
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.full-width {
+  width: 100%;
+  min-width: max-content;
+}
+
+// General polish: cards read as slightly raised surfaces with a soft
+// shadow instead of Material's very flat default outline, and buttons get
+// a touch more rounding for a friendlier feel.
+mat-card {
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.dark-theme mat-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button {
+  border-radius: 8px !important;
+}

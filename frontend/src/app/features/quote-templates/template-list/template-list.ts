@@ -53,7 +53,9 @@ export class TemplateList {
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly canManage = this.auth.hasAnyRole('ADMIN', 'SALES_MANAGER');
   readonly columns = computed(() =>
-    this.canManage ? ['name', 'isDefault', 'createdAt', 'actions'] : ['name', 'isDefault', 'createdAt'],
+    this.canManage
+      ? ['name', 'appliesTo', 'isDefault', 'createdAt', 'actions']
+      : ['name', 'appliesTo', 'isDefault', 'createdAt'],
   );
 
   constructor() {

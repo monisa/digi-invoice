@@ -27,6 +27,10 @@
       <th mat-header-cell *matHeaderCellDef>Name</th>
       <td mat-cell *matCellDef="let t">{{ t.name }}</td>
     </ng-container>
+    <ng-container matColumnDef="appliesTo">
+      <th mat-header-cell *matHeaderCellDef>Applies to</th>
+      <td mat-cell *matCellDef="let t">{{ t.appliesTo === 'BOTH' ? 'Quotes & Invoices' : (t.appliesTo === 'INVOICE' ? 'Invoices' : 'Quotes') }}</td>
+    </ng-container>
     <ng-container matColumnDef="isDefault">
       <th mat-header-cell *matHeaderCellDef>Default</th>
       <td mat-cell *matCellDef="let t">

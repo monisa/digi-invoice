@@ -1,0 +1,181 @@
+<header class="builder-head">
+  <h1>{{ isEdit ? 'Edit invoice' : 'New invoice' }}</h1>
+  <a mat-button routerLink="/invoices">
+    <mat-icon>arrow_back</mat-icon>
+    Back to invoices
+  </a>
+</header>
+
+@if (loading() || saving()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Details</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="header-grid" formGroupName="header">
+        <mat-form-field appearance="outline">
+          <mat-label>Account</mat-label>
+          <mat-select formControlName="accountId">
+            <mat-option [value]="''">— None —</mat-option>
+            @for (a of accounts(); track a.id) {
+              <mat-option [value]="a.id">{{ a.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contact</mat-label>
+          <mat-select formControlName="contactId">
+            <mat-option [value]="''">— None —</mat-option>
+            @for (c of contacts(); track c.id) {
+              <mat-option [value]="c.id">{{ c.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Template</mat-label>
+          <mat-select formControlName="templateId">
+            <mat-option [value]="''">— Default —</mat-option>
+            @for (tpl of templates(); track tpl.id) {
+              <mat-option [value]="tpl.id">{{ tpl.name }}@if (tpl.isDefault) { (default) }</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Currency</mat-label>
+          <input matInput formControlName="currency" maxlength="3" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Exchange rate</mat-label>
+          <input matInput type="number" step="0.000001" formControlName="exchangeRate" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Due date</mat-label>
+          <input matInput type="date" formControlName="dueDate" />
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="section">
+    <mat-card-header><mat-card-title>Line items</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="lines" formArrayName="lineItems">
+        <div class="line-row line-row--head">
+          <span>Product</span>
+          <span>Description</span>
+          <span class="num">Qty</span>
+          <span class="num">Unit price</span>
+          <span class="num">Disc %</span>
+          <span>Tax</span>
+          <span class="num">Line total</span>
+          <span></span>
+        </div>
+
+        @for (line of lineItems.controls; track line; let i = $index) {
+          <div class="line-row" [formGroupName]="i">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select
+                formControlName="productId"
+                (selectionChange)="onProductSelected(i, $event.value)"
+              >
+                <mat-option [value]="''">— Custom —</mat-option>
+                @for (p of products(); track p.id) {
+                  <mat-option [value]="p.id">{{ p.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input matInput formControlName="description" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
+              <input matInput type="number" min="0" step="0.01" formControlName="quantity" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
+              <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
+              <input matInput type="number" min="0" max="100" step="0.01" formControlName="discountPct" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select formControlName="taxRateId">
+                <mat-option [value]="''">None</mat-option>
+                @for (t of taxRates(); track t.id) {
+                  <mat-option [value]="t.id">{{ t.name }} ({{ t.percentage }}%)</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <span class="num line-total">{{ totals().lineTotals[i] || '0.00' }}</span>
+
+            <button
+              mat-icon-button
+              type="button"
+              color="warn"
+              (click)="removeLine(i)"
+              [disabled]="lineItems.length === 1"
+              matTooltip="Remove line"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+
+      <button mat-stroked-button type="button" (click)="addLine()" class="add-line">
+        <mat-icon>add</mat-icon>
+        Add line
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="section">
+    <mat-card-content class="totals-row">
+      <div class="discount" formGroupName="header">
+        <span class="totals-label">Overall discount</span>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="disc-type">
+          <mat-select formControlName="overallDiscountType">
+            <mat-option value="PERCENT">Percent</mat-option>
+            <mat-option value="AMOUNT">Amount</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="disc-value">
+          <input matInput type="number" min="0" step="0.01" formControlName="overallDiscountValue" />
+        </mat-form-field>
+      </div>
+
+      <dl class="totals">
+        <dt>Subtotal</dt>
+        <dd>{{ totals().subtotal }}</dd>
+        <dt>Discount</dt>
+        <dd>−{{ totals().discountTotal }}</dd>
+        <dt>Tax</dt>
+        <dd>{{ totals().taxTotal }}</dd>
+        <dt class="grand">Grand total</dt>
+        <dd class="grand">{{ totals().grandTotal }} {{ header.controls.currency.value }}</dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+
+  @if (error()) {
+    <p class="form-error">{{ error() }}</p>
+  }
+
+  <div class="builder-actions">
+    <a mat-button routerLink="/invoices">Cancel</a>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      {{ isEdit ? 'Save changes' : 'Create invoice' }}
+    </button>
+  </div>
+</form>

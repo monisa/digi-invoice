@@ -36,30 +36,32 @@
           <div class="grand">{{ q.grandTotal }} {{ q.currency }}</div>
         </header>
 
-        <table mat-table [dataSource]="q.lineItems" class="full-width">
-          <ng-container matColumnDef="description">
-            <th mat-header-cell *matHeaderCellDef>Description</th>
-            <td mat-cell *matCellDef="let l">{{ l.description || '—' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="quantity">
-            <th mat-header-cell *matHeaderCellDef class="num">Qty</th>
-            <td mat-cell *matCellDef="let l" class="num">{{ l.quantity }}</td>
-          </ng-container>
-          <ng-container matColumnDef="unitPrice">
-            <th mat-header-cell *matHeaderCellDef class="num">Unit</th>
-            <td mat-cell *matCellDef="let l" class="num">{{ l.unitPrice }}</td>
-          </ng-container>
-          <ng-container matColumnDef="discountPct">
-            <th mat-header-cell *matHeaderCellDef class="num">Disc%</th>
-            <td mat-cell *matCellDef="let l" class="num">{{ l.discountPct }}</td>
-          </ng-container>
-          <ng-container matColumnDef="lineTotal">
-            <th mat-header-cell *matHeaderCellDef class="num">Total</th>
-            <td mat-cell *matCellDef="let l" class="num">{{ l.lineTotal }}</td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="lineColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: lineColumns"></tr>
-        </table>
+        <div class="table-wrap">
+          <table mat-table [dataSource]="q.lineItems" class="full-width">
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Description</th>
+              <td mat-cell *matCellDef="let l">{{ l.description || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef class="num">Qty</th>
+              <td mat-cell *matCellDef="let l" class="num">{{ l.quantity }}</td>
+            </ng-container>
+            <ng-container matColumnDef="unitPrice">
+              <th mat-header-cell *matHeaderCellDef class="num">Unit</th>
+              <td mat-cell *matCellDef="let l" class="num">{{ l.unitPrice }}</td>
+            </ng-container>
+            <ng-container matColumnDef="discountPct">
+              <th mat-header-cell *matHeaderCellDef class="num">Disc%</th>
+              <td mat-cell *matCellDef="let l" class="num">{{ l.discountPct }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lineTotal">
+              <th mat-header-cell *matHeaderCellDef class="num">Total</th>
+              <td mat-cell *matCellDef="let l" class="num">{{ l.lineTotal }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="lineColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: lineColumns"></tr>
+          </table>
+        </div>
 
         <dl class="totals">
           <dt>Subtotal</dt><dd>{{ q.subtotal }}</dd>

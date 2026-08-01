@@ -21,7 +21,7 @@ import { ProductsService } from '../../products/products.service';
 import { TaxRatesService } from '../../tax-rates/tax-rates.service';
 import { QuoteTemplatesService } from '../../quote-templates/quote-templates.service';
 import { extractApiError } from '../../../core/utils/api-error';
-import { calculateQuote, type CalcTotals } from '../quote-calc';
+import { calculateTotals, type CalcTotals } from '../../../core/utils/money-calc';
 import { EDITABLE_STATUSES, type QuotePayload } from '../../../core/models/quote.model';
 import type { Account, Contact } from '../../../core/models/crm.model';
 import type { Product, TaxRate } from '../../../core/models/catalog.model';
@@ -158,7 +158,7 @@ export class QuoteBuilder {
       };
     });
     const h = this.header.getRawValue();
-    this.totals.set(calculateQuote(lines, h.overallDiscountType, h.overallDiscountValue || 0));
+    this.totals.set(calculateTotals(lines, h.overallDiscountType, h.overallDiscountValue || 0));
   }
 
   private loadLookups(): void {
