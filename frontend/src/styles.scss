@@ -64,9 +64,12 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 }
 
 // Shared table convention used across feature pages: a `.table-wrap` div
-// around a `.full-width` mat-table. min-width: max-content keeps columns
-// from being crushed on narrow viewports, so overflow-x can actually
-// engage instead of the table just shrinking to fit.
+// around a `.full-width` mat-table. Table auto-layout already refuses to
+// shrink nowrap content below its minimum width on its own, so overflow-x
+// here is enough to turn that into a scrollbar instead of a squish —
+// adding an explicit min-width: max-content caused a severe table-layout
+// blowup (columns computing to thousands of px) in combination with a
+// percentage-width column (.actions-col), so don't reintroduce it.
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -74,7 +77,6 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 .full-width {
   width: 100%;
-  min-width: max-content;
 }
 
 // General polish: cards read as slightly raised surfaces with a soft
