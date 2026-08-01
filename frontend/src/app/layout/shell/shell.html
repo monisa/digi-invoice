@@ -1,13 +1,22 @@
 <mat-toolbar color="primary" class="topbar">
+  @if (tenant()?.logoDataUri) {
+    <img [src]="tenant()!.logoDataUri" class="tenant-logo" [alt]="tenant()?.companyName" />
+  }
   <button mat-icon-button (click)="drawer.toggle()" aria-label="Toggle navigation">
     <mat-icon>menu</mat-icon>
   </button>
   <span class="brand">digi-invoice</span>
-  @if (tenant()?.logoDataUri) {
-    <img [src]="tenant()!.logoDataUri" class="tenant-logo" [alt]="tenant()?.companyName" />
-  }
   <span class="tenant">{{ tenant()?.companyName }}</span>
   <span class="spacer"></span>
+
+  <button
+    mat-icon-button
+    (click)="theme.toggle()"
+    [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+    [matTooltip]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+  >
+    <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+  </button>
 
   <button mat-button [matMenuTriggerFor]="userMenu">
     <mat-icon>account_circle</mat-icon>

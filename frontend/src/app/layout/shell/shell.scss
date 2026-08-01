@@ -50,8 +50,25 @@
   padding: 24px;
 }
 
+mat-nav-list a[mat-list-item] {
+  border-radius: 0 20px 20px 0;
+  margin: 2px 8px 2px 0;
+  transition: background-color 120ms ease;
+}
+
+mat-nav-list a[mat-list-item]:not(.active-link):hover {
+  background: var(--mat-sys-surface-container-high);
+}
+
 .active-link {
   background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--mat-sys-primary);
+}
+
+.active-link mat-icon {
+  color: var(--mat-sys-primary);
 }
 
 .disabled-link {
