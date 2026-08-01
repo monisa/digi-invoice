@@ -24,6 +24,9 @@ class SignupRequest extends FormRequest
     {
         return [
             'companyName' => ['required', 'string', 'max:200'],
+            'companyAddress' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'companyPhone' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'companyEmail' => ['sometimes', 'nullable', 'email'],
             'subdomain' => [
                 'required', 'string', 'min:3', 'max:63',
                 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/',

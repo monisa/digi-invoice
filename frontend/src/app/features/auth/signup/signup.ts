@@ -41,6 +41,9 @@ export class Signup {
 
   readonly form = this.fb.nonNullable.group({
     companyName: ['', Validators.required],
+    companyAddress: [''],
+    companyPhone: [''],
+    companyEmail: ['', Validators.email],
     subdomain: [
       '',
       [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/)],

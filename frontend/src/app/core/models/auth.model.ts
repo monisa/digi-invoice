@@ -34,6 +34,9 @@ export interface LoginRequest {
 
 export interface SignupRequest {
   companyName: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
   subdomain: string;
   adminName: string;
   adminEmail: string;

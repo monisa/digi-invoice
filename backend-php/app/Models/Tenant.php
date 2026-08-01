@@ -13,6 +13,9 @@ class Tenant extends Model
 
     protected $fillable = [
         'company_name',
+        'address',
+        'phone',
+        'email',
         'subdomain',
         'plan',
         'currency_default',

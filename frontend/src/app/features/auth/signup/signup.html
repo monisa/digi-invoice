@@ -19,6 +19,25 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>Business address (optional)</mat-label>
+          <input matInput formControlName="companyAddress" />
+          <mat-hint>Shown on Quote/Invoice PDFs</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Business phone (optional)</mat-label>
+          <input matInput formControlName="companyPhone" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Business email (optional)</mat-label>
+          <input matInput type="email" formControlName="companyEmail" />
+          @if (form.controls.companyEmail.touched && form.controls.companyEmail.invalid) {
+            <mat-error>Enter a valid email</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Subdomain</mat-label>
           <input matInput formControlName="subdomain" placeholder="acme" />
           <mat-hint>Lowercase letters, numbers and hyphens</mat-hint>

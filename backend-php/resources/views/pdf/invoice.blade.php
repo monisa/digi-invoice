@@ -50,10 +50,6 @@
     .terms ol, .terms p { color: #444; font-size: 8.5px; margin: 0; padding-left: 14px; }
     .terms li { margin-bottom: 3px; }
 
-    .signed { clear: both; margin-top: 24px; border-top: 1px solid #eee; padding-top: 14px; }
-    .signed h3 { font-size: 10px; margin: 0 0 8px; }
-    .signed img { max-width: 200px; max-height: 70px; }
-
     .footer { margin-top: 24px; text-align: center; font-size: 8px; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
 </style>
 </head>
@@ -72,30 +68,30 @@
                     @if($tenantEmail){{ $tenantEmail }}@endif
                 </div>
             </td>
-            <td class="doc-title-cell"><span class="doc-title">QUOTE</span></td>
+            <td class="doc-title-cell"><span class="doc-title">INVOICE</span></td>
         </tr>
     </table>
 
     <table class="meta-bar">
         <tr>
-            <td class="meta-label">Quote #</td>
-            <td class="meta-value">{{ $quote->quote_number }}</td>
+            <td class="meta-label">Invoice #</td>
+            <td class="meta-value">{{ $invoice->invoice_number }}</td>
             <td class="meta-label">Date</td>
-            <td class="meta-value">{{ $quote->created_at->format('d/m/Y') }}</td>
+            <td class="meta-value">{{ $invoice->created_at->format('d/m/Y') }}</td>
             <td class="meta-label">Status</td>
-            <td class="meta-value">{{ $quote->status }}</td>
-            @if($quote->valid_until)
-                <td class="meta-label">Valid until</td>
-                <td class="meta-value">{{ $quote->valid_until->format('d/m/Y') }}</td>
+            <td class="meta-value">{{ $invoice->status }}</td>
+            @if($invoice->due_date)
+                <td class="meta-label">Due</td>
+                <td class="meta-value">{{ $invoice->due_date->format('d/m/Y') }}</td>
             @endif
         </tr>
     </table>
 
     <div class="bill-to">
         <div class="label">Bill To</div>
-        <div class="name">{{ $quote->account->name ?? '—' }}</div>
-        @if($quote->contact?->name)<div style="padding: 2px 8px;">{{ $quote->contact->name }}</div>@endif
-        @if($quote->contact?->email)<div style="padding: 2px 8px;">{{ $quote->contact->email }}</div>@endif
+        <div class="name">{{ $invoice->account->name ?? '—' }}</div>
+        @if($invoice->contact?->name)<div style="padding: 2px 8px;">{{ $invoice->contact->name }}</div>@endif
+        @if($invoice->contact?->email)<div style="padding: 2px 8px;">{{ $invoice->contact->email }}</div>@endif
     </div>
 
     @if($headerHtml)
@@ -114,7 +110,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($quote->lineItems as $line)
+            @foreach($invoice->lineItems as $line)
                 <tr>
                     <td class="idx">{{ $loop->iteration }}</td>
                     <td>{{ $line->description ?: '—' }}</td>
@@ -142,31 +138,19 @@
             </td>
             <td class="totals-cell">
                 <table class="totals">
-                    <tr><td class="label">Subtotal</td><td class="value">{{ number_format((float) $quote->subtotal, 2) }} {{ $quote->currency }}</td></tr>
-                    @if((float) $quote->discount_total > 0)
-                        <tr><td class="label">Discount</td><td class="value">- {{ number_format((float) $quote->discount_total, 2) }} {{ $quote->currency }}</td></tr>
+                    <tr><td class="label">Subtotal</td><td class="value">{{ number_format((float) $invoice->subtotal, 2) }} {{ $invoice->currency }}</td></tr>
+                    @if((float) $invoice->discount_total > 0)
+                        <tr><td class="label">Discount</td><td class="value">- {{ number_format((float) $invoice->discount_total, 2) }} {{ $invoice->currency }}</td></tr>
                     @endif
-                    @if((float) $quote->tax_total > 0)
-                        <tr><td class="label">Tax</td><td class="value">{{ number_format((float) $quote->tax_total, 2) }} {{ $quote->currency }}</td></tr>
+                    @if((float) $invoice->tax_total > 0)
+                        <tr><td class="label">Tax</td><td class="value">{{ number_format((float) $invoice->tax_total, 2) }} {{ $invoice->currency }}</td></tr>
                     @endif
-                    <tr class="grand"><td class="label">Total</td><td class="value">{{ number_format((float) $quote->grand_total, 2) }} {{ $quote->currency }}</td></tr>
+                    <tr class="grand"><td class="label">Total</td><td class="value">{{ number_format((float) $invoice->grand_total, 2) }} {{ $invoice->currency }}</td></tr>
                 </table>
                 <div class="signature-box">Authorized Signature</div>
             </td>
         </tr>
     </table>
-
-    @if($signature)
-        <div class="signed">
-            <h3>Accepted &amp; signed</h3>
-            @if($signature['imagePath'] ?? null)
-                <img src="{{ $signature['imagePath'] }}">
-            @endif
-            <p>Signed by: {{ $signature['signerName'] }}</p>
-            @if($signature['signerEmail'] ?? null)<p>Email: {{ $signature['signerEmail'] }}</p>@endif
-            @if($signature['signedAt'] ?? null)<p>Date: {{ $signature['signedAt'] }}</p>@endif
-        </div>
-    @endif
 
     <div class="footer">{!! $footerHtml ?: 'Thank you for your business.' !!}</div>
 </div>

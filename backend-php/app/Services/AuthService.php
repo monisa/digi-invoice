@@ -37,6 +37,9 @@ class AuthService
         [$tenant, $user] = DB::transaction(function () use ($input, $passwordHash, $logoPath) {
             $tenant = Tenant::create([
                 'company_name' => $input['companyName'],
+                'address' => $input['companyAddress'] ?? null,
+                'phone' => $input['companyPhone'] ?? null,
+                'email' => $input['companyEmail'] ?? null,
                 'subdomain' => $input['subdomain'],
                 'logo_path' => $logoPath,
             ]);
