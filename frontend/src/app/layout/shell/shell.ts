@@ -8,7 +8,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/auth/auth.service';
+import { ThemeService } from '../../core/theme/theme.service';
 
 interface NavItem {
   label: string;
@@ -31,6 +33,7 @@ interface NavItem {
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
+    MatTooltipModule,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -38,6 +41,7 @@ interface NavItem {
 export class Shell {
   private readonly auth = inject(AuthService);
   private readonly document = inject(DOCUMENT);
+  readonly theme = inject(ThemeService);
 
   readonly user = this.auth.currentUser;
   readonly tenant = this.auth.currentTenant;
@@ -55,7 +59,6 @@ export class Shell {
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', enabled: true },
     { label: 'Accounts', icon: 'business', route: '/accounts', enabled: true },
     { label: 'Contacts', icon: 'contacts', route: '/contacts', enabled: true },
-    { label: 'Deals', icon: 'monetization_on', route: '/deals', enabled: true },
     { label: 'Products', icon: 'inventory_2', route: '/products', enabled: true },
     { label: 'Tax rates', icon: 'percent', route: '/tax-rates', enabled: true },
     { label: 'Exchange rates', icon: 'currency_exchange', route: '/exchange-rates', enabled: true },

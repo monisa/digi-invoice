@@ -19,33 +19,3 @@ export interface Contact {
   createdAt: string;
   updatedAt: string;
 }
-
-export type DealStage =
-  | 'PROSPECTING'
-  | 'QUALIFICATION'
-  | 'PROPOSAL'
-  | 'NEGOTIATION'
-  | 'CLOSED_WON'
-  | 'CLOSED_LOST';
-
-export const DEAL_STAGES: DealStage[] = [
-  'PROSPECTING',
-  'QUALIFICATION',
-  'PROPOSAL',
-  'NEGOTIATION',
-  'CLOSED_WON',
-  'CLOSED_LOST',
-];
-
-export interface Deal {
-  id: string;
-  accountId?: string | null;
-  name: string;
-  stage: DealStage;
-  amount?: string | null;
-  currency: string;
-  expectedCloseDate?: string | null;
-  account?: Account | null;
-  createdAt: string;
-  updatedAt: string;
-}

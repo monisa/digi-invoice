@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\DealController;
 use App\Http\Controllers\Api\ExchangeRateController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\ProductController;
@@ -35,13 +34,12 @@ Route::prefix('auth')->group(function () {
 });
 
 // Roles permitted to mutate CRM data (Viewer is read-only) — mirrors
-// backend/src/routes/{account,contact,deal}.routes.ts's WRITE constant.
+// backend/src/routes/{account,contact}.routes.ts's WRITE constant.
 $crmWrite = 'role:ADMIN,SALES_MANAGER,SALES_REP';
 
 foreach ([
     'accounts' => AccountController::class,
     'contacts' => ContactController::class,
-    'deals' => DealController::class,
 ] as $prefix => $controller) {
     Route::prefix($prefix)->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($controller, $crmWrite) {
         Route::get('/', [$controller, 'index']);

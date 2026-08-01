@@ -11,7 +11,6 @@ use App\Http\Requests\Quote\UpdateQuoteRequest;
 use App\Http\Requests\Quote\WorkflowActionRequest;
 use App\Models\Account;
 use App\Models\Contact;
-use App\Models\Deal;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\QuoteApproval;
@@ -115,7 +114,6 @@ class QuoteController extends Controller
                 'quote_number' => $quoteNumber,
                 'account_id' => $input['accountId'] ?? null,
                 'contact_id' => $input['contactId'] ?? null,
-                'deal_id' => $input['dealId'] ?? null,
                 'template_id' => $input['templateId'] ?? null,
                 'owner_id' => $ownerId,
                 'currency' => $input['currency'] ?? 'USD',
@@ -216,7 +214,6 @@ class QuoteController extends Controller
             $map = [
                 'accountId' => 'account_id',
                 'contactId' => 'contact_id',
-                'dealId' => 'deal_id',
                 'templateId' => 'template_id',
                 'ownerId' => 'owner_id',
                 'currency' => 'currency',
@@ -526,13 +523,12 @@ class QuoteController extends Controller
         }
     }
 
-    /** Validate the optional header foreign keys (account/contact/deal/owner). */
+    /** Validate the optional header foreign keys (account/contact/owner). */
     private function validateHeaderRefs(array $refs): void
     {
         $checks = [
             'accountId' => fn ($id) => Account::find($id),
             'contactId' => fn ($id) => Contact::find($id),
-            'dealId' => fn ($id) => Deal::find($id),
             'templateId' => fn ($id) => QuoteTemplate::find($id),
             'ownerId' => fn ($id) => User::find($id),
         ];

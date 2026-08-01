@@ -58,7 +58,6 @@ export interface Quote {
   quoteNumber: string;
   accountId?: string | null;
   contactId?: string | null;
-  dealId?: string | null;
   templateId?: string | null;
   ownerId?: string | null;
   status: QuoteStatus;
@@ -125,7 +124,6 @@ export interface QuoteLineItemPayload {
 export interface QuotePayload {
   accountId?: string | null;
   contactId?: string | null;
-  dealId?: string | null;
   templateId?: string | null;
   currency?: string;
   exchangeRate?: string;

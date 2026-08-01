@@ -40,7 +40,7 @@ class AccountController extends Controller
     {
         $this->validateUuidParam($id);
 
-        $account = Account::with(['contacts', 'deals'])->find($id);
+        $account = Account::with(['contacts'])->find($id);
         if (! $account) {
             throw ApiException::notFound('Account not found');
         }

@@ -30,7 +30,6 @@ class CreateQuoteRequest extends FormRequest
         return [
             'accountId' => ['sometimes', 'uuid'],
             'contactId' => ['sometimes', 'uuid'],
-            'dealId' => ['sometimes', 'uuid'],
             'templateId' => ['sometimes', 'uuid'],
             'ownerId' => ['sometimes', 'uuid'],
             'currency' => ['sometimes', 'size:3', 'alpha'],
@@ -53,7 +52,6 @@ class CreateQuoteRequest extends FormRequest
         return [
             'accountId.uuid' => 'Invalid accountId',
             'contactId.uuid' => 'Invalid contactId',
-            'dealId.uuid' => 'Invalid dealId',
             'templateId.uuid' => 'Invalid templateId',
             'ownerId.uuid' => 'Invalid ownerId',
             'currency.size' => 'Currency must be a 3-letter ISO code',
