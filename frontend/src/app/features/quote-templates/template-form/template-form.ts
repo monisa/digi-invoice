@@ -8,7 +8,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { QuoteTemplatesService } from '../quote-templates.service';
 import { extractApiError } from '../../../core/utils/api-error';
-import { TEMPLATE_PLACEHOLDERS, type QuoteTemplate } from '../../../core/models/quote-template.model';
+import { MatSelectModule } from '@angular/material/select';
+import { TEMPLATE_APPLIES_TO, TEMPLATE_PLACEHOLDERS, type QuoteTemplate } from '../../../core/models/quote-template.model';
 
 @Component({
   selector: 'app-template-form',
@@ -20,6 +21,7 @@ import { TEMPLATE_PLACEHOLDERS, type QuoteTemplate } from '../../../core/models/
     MatButtonModule,
     MatSlideToggleModule,
     MatProgressBarModule,
+    MatSelectModule,
   ],
   templateUrl: './template-form.html',
   styleUrl: './template-form.scss',
@@ -34,9 +36,11 @@ export class TemplateForm {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly placeholders = TEMPLATE_PLACEHOLDERS.map((p) => `{{${p}}}`);
+  readonly appliesToOptions = TEMPLATE_APPLIES_TO;
 
   readonly form = this.fb.nonNullable.group({
     name: [this.data?.template?.name ?? '', Validators.required],
+    appliesTo: [this.data?.template?.appliesTo ?? 'QUOTE'],
     headerHtml: [this.data?.template?.headerHtml ?? ''],
     termsHtml: [this.data?.template?.termsHtml ?? ''],
     footerHtml: [this.data?.template?.footerHtml ?? ''],
@@ -53,6 +57,7 @@ export class TemplateForm {
     const v = this.form.getRawValue();
     const payload = {
       name: v.name,
+      appliesTo: v.appliesTo,
       headerHtml: v.headerHtml || null,
       termsHtml: v.termsHtml || null,
       footerHtml: v.footerHtml || null,

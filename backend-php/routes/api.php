@@ -97,9 +97,13 @@ Route::prefix('sales-orders')->middleware(['jwt.auth', 'tenant.scope'])->group(f
     Route::post('/{id}/convert-to-invoice', [SalesOrderController::class, 'convertToInvoice'])->middleware($catalogManage);
 });
 
-Route::prefix('invoices')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($catalogManage) {
+Route::prefix('invoices')->middleware(['jwt.auth', 'tenant.scope'])->group(function () use ($crmWrite, $catalogManage) {
     Route::get('/', [InvoiceController::class, 'index']);
+    Route::post('/', [InvoiceController::class, 'store'])->middleware($crmWrite);
     Route::get('/{id}', [InvoiceController::class, 'show']);
+    Route::get('/{id}/pdf', [InvoiceController::class, 'pdf']);
+    Route::put('/{id}', [InvoiceController::class, 'update'])->middleware($crmWrite);
+    Route::delete('/{id}', [InvoiceController::class, 'destroy'])->middleware($crmWrite);
     Route::patch('/{id}/status', [InvoiceController::class, 'updateStatus'])->middleware($catalogManage);
 });
 

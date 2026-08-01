@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Quote;
+namespace App\Http\Requests\Invoice;
 
+use App\Http\Requests\Concerns\RequiresAtLeastOneField;
 use App\Http\Requests\Concerns\TrimsStringFields;
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateQuoteRequest extends FormRequest
+/** Mirrors UpdateQuoteRequest. */
+class UpdateInvoiceRequest extends FormRequest
 {
-    use TrimsStringFields;
+    use RequiresAtLeastOneField, TrimsStringFields;
 
     public function authorize(): bool
     {
@@ -20,9 +22,6 @@ class CreateQuoteRequest extends FormRequest
         if (is_string($currency)) {
             $this->merge(['currency' => strtoupper(trim($currency))]);
         }
-        if (! $this->has('lineItems')) {
-            $this->merge(['lineItems' => []]);
-        }
     }
 
     public function rules(): array
@@ -34,10 +33,10 @@ class CreateQuoteRequest extends FormRequest
             'ownerId' => ['sometimes', 'nullable', 'uuid'],
             'currency' => ['sometimes', 'size:3', 'alpha'],
             'exchangeRate' => ['sometimes', 'numeric', 'gt:0'],
-            'validUntil' => ['sometimes', 'nullable', 'date'],
+            'dueDate' => ['sometimes', 'nullable', 'date'],
             'overallDiscountType' => ['sometimes', 'in:PERCENT,AMOUNT'],
             'overallDiscountValue' => ['sometimes', 'numeric', 'min:0'],
-            'lineItems' => ['array'],
+            'lineItems' => ['sometimes', 'array'],
             'lineItems.*.productId' => ['sometimes', 'nullable', 'uuid'],
             'lineItems.*.description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'lineItems.*.quantity' => ['required', 'numeric', 'gt:0'],

@@ -61,6 +61,7 @@ class QuoteTemplateController extends Controller
 
             return QuoteTemplate::create([
                 'name' => $input['name'],
+                'applies_to' => $input['appliesTo'] ?? 'QUOTE',
                 'header_html' => $input['headerHtml'] ?? null,
                 'footer_html' => $input['footerHtml'] ?? null,
                 'terms_html' => $input['termsHtml'] ?? null,
@@ -89,6 +90,7 @@ class QuoteTemplateController extends Controller
 
             $map = [
                 'name' => 'name',
+                'appliesTo' => 'applies_to',
                 'headerHtml' => 'header_html',
                 'footerHtml' => 'footer_html',
                 'termsHtml' => 'terms_html',

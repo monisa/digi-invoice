@@ -1,10 +1,10 @@
 import Decimal from 'decimal.js';
-import type { DiscountType } from '../../core/models/quote.model';
+import type { DiscountType } from '../models/quote.model';
 
 /**
- * Client-side mirror of the backend quoteCalculator (same model + rounding).
- * Used only for the live preview in the builder — the server remains
- * authoritative and recomputes on save.
+ * Client-side mirror of the backend QuoteCalculator (same model + rounding).
+ * Shared by the Quote and Invoice builders for a live totals preview — the
+ * server remains authoritative and recomputes on save either way.
  */
 const DP = 2;
 const round = (d: Decimal): Decimal => d.toDecimalPlaces(DP, Decimal.ROUND_HALF_UP);
@@ -24,7 +24,7 @@ export interface CalcTotals {
   grandTotal: string;
 }
 
-export function calculateQuote(
+export function calculateTotals(
   lines: CalcLine[],
   overallDiscountType: DiscountType = 'PERCENT',
   overallDiscountValue: Decimal.Value = 0,

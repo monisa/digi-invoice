@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Quote;
+namespace App\Http\Requests\Invoice;
 
 use App\Http\Requests\Concerns\TrimsStringFields;
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateQuoteRequest extends FormRequest
+/** Mirrors CreateQuoteRequest — same header/line-item shape, minus dealId (never existed here) and validUntil (dueDate instead). */
+class CreateInvoiceRequest extends FormRequest
 {
     use TrimsStringFields;
 
@@ -34,7 +35,7 @@ class CreateQuoteRequest extends FormRequest
             'ownerId' => ['sometimes', 'nullable', 'uuid'],
             'currency' => ['sometimes', 'size:3', 'alpha'],
             'exchangeRate' => ['sometimes', 'numeric', 'gt:0'],
-            'validUntil' => ['sometimes', 'nullable', 'date'],
+            'dueDate' => ['sometimes', 'nullable', 'date'],
             'overallDiscountType' => ['sometimes', 'in:PERCENT,AMOUNT'],
             'overallDiscountValue' => ['sometimes', 'numeric', 'min:0'],
             'lineItems' => ['array'],

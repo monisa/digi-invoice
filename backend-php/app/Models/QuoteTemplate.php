@@ -15,6 +15,7 @@ class QuoteTemplate extends Model
     protected $fillable = [
         'tenant_id',
         'name',
+        'applies_to',
         'header_html',
         'footer_html',
         'terms_html',
@@ -22,6 +23,7 @@ class QuoteTemplate extends Model
     ];
 
     protected $attributes = [
+        'applies_to' => 'QUOTE',
         'is_default' => false,
     ];
 
@@ -35,5 +37,10 @@ class QuoteTemplate extends Model
     public function quotes()
     {
         return $this->hasMany(Quote::class, 'template_id');
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'template_id');
     }
 }

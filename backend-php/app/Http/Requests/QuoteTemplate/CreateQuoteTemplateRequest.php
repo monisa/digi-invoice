@@ -23,6 +23,7 @@ class CreateQuoteTemplateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:1', 'max:160'],
+            'appliesTo' => ['sometimes', 'in:QUOTE,INVOICE,BOTH'],
             'headerHtml' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'footerHtml' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'termsHtml' => ['sometimes', 'nullable', 'string', 'max:20000'],

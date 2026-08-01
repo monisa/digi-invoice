@@ -3,6 +3,12 @@
     <h1>Invoices</h1>
     <p>{{ total() }} total</p>
   </div>
+  @if (canWrite) {
+    <a mat-flat-button color="primary" routerLink="/invoices/new">
+      <mat-icon>add</mat-icon>
+      New invoice
+    </a>
+  }
 </header>
 
 <div class="filters">
@@ -30,25 +36,13 @@
   <table mat-table [dataSource]="items()" class="full-width">
     <ng-container matColumnDef="invoiceNumber">
       <th mat-header-cell *matHeaderCellDef>Invoice #</th>
-      <td mat-cell *matCellDef="let i">{{ i.invoiceNumber }}</td>
-    </ng-container>
-    <ng-container matColumnDef="order">
-      <th mat-header-cell *matHeaderCellDef>Order</th>
-      <td mat-cell *matCellDef="let i">{{ i.salesOrder?.orderNumber || '—' }}</td>
+      <td mat-cell *matCellDef="let i">
+        <a [routerLink]="['/invoices', i.id]">{{ i.invoiceNumber }}</a>
+      </td>
     </ng-container>
     <ng-container matColumnDef="account">
       <th mat-header-cell *matHeaderCellDef>Account</th>
-      <td mat-cell *matCellDef="let i">{{ i.salesOrder?.quote?.account?.name || '—' }}</td>
-    </ng-container>
-    <ng-container matColumnDef="total">
-      <th mat-header-cell *matHeaderCellDef>Amount</th>
-      <td mat-cell *matCellDef="let i">
-        {{ i.salesOrder?.quote?.grandTotal }} {{ i.salesOrder?.quote?.currency }}
-      </td>
-    </ng-container>
-    <ng-container matColumnDef="dueDate">
-      <th mat-header-cell *matHeaderCellDef>Due</th>
-      <td mat-cell *matCellDef="let i">{{ i.dueDate ? (i.dueDate | date: 'mediumDate') : '—' }}</td>
+      <td mat-cell *matCellDef="let i">{{ i.account?.name || i.salesOrder?.quote?.account?.name || '—' }}</td>
     </ng-container>
     <ng-container matColumnDef="status">
       <th mat-header-cell *matHeaderCellDef>Status</th>
@@ -56,17 +50,44 @@
         <span class="status-chip" [class]="statusClass(i.status)">{{ statusLabel(i.status) }}</span>
       </td>
     </ng-container>
+    <ng-container matColumnDef="grandTotal">
+      <th mat-header-cell *matHeaderCellDef>Amount</th>
+      <td mat-cell *matCellDef="let i">{{ i.grandTotal }} {{ i.currency }}</td>
+    </ng-container>
+    <ng-container matColumnDef="dueDate">
+      <th mat-header-cell *matHeaderCellDef>Due</th>
+      <td mat-cell *matCellDef="let i">{{ i.dueDate ? (i.dueDate | date: 'mediumDate') : '—' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="owner">
+      <th mat-header-cell *matHeaderCellDef>Owner</th>
+      <td mat-cell *matCellDef="let i">{{ i.owner?.name || '—' }}</td>
+    </ng-container>
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
       <td mat-cell *matCellDef="let i" class="actions-col">
-        <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Set status">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          @for (s of statuses; track s) {
-            <button mat-menu-item (click)="setStatus(i, s)" [disabled]="i.status === s">{{ statusLabel(s) }}</button>
-          }
-        </mat-menu>
+        <a mat-icon-button [routerLink]="['/invoices', i.id]" matTooltip="View">
+          <mat-icon>visibility</mat-icon>
+        </a>
+        @if (isEditable(i)) {
+          <a mat-icon-button [routerLink]="['/invoices', i.id, 'edit']" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </a>
+        }
+        @if (canManage) {
+          <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Set status">
+            <mat-icon>sync</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            @for (s of statuses; track s) {
+              <button mat-menu-item (click)="setStatus(i, s)" [disabled]="i.status === s">{{ statusLabel(s) }}</button>
+            }
+          </mat-menu>
+        }
+        @if (isEditable(i)) {
+          <button mat-icon-button color="warn" (click)="confirmDelete(i)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
       </td>
     </ng-container>
 
@@ -75,7 +96,7 @@
   </table>
 
   @if (!loading() && items().length === 0) {
-    <div class="empty">No invoices yet. Create one from a sales order.</div>
+    <div class="empty">No invoices yet.</div>
   }
 
   <mat-paginator [length]="total()" [pageIndex]="page()" [pageSize]="pageSize()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />

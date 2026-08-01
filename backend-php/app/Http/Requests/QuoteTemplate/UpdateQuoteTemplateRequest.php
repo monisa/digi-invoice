@@ -24,6 +24,7 @@ class UpdateQuoteTemplateRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'min:1', 'max:160'],
+            'appliesTo' => ['sometimes', 'in:QUOTE,INVOICE,BOTH'],
             'headerHtml' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'footerHtml' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'termsHtml' => ['sometimes', 'nullable', 'string', 'max:20000'],

@@ -14,7 +14,7 @@ class UpdateInvoiceStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:DRAFT,ISSUED,PAID,OVERDUE,VOID'],
+            'status' => ['required', 'in:DRAFT,PENDING,PAID,OVERDUE'],
             'dueDate' => ['sometimes', 'nullable', 'date'],
         ];
     }

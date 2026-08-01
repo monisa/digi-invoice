@@ -22,7 +22,7 @@ class ListInvoicesRequest extends FormRequest
     public function rules(): array
     {
         return $this->listRules() + [
-            'status' => ['sometimes', 'in:DRAFT,ISSUED,PAID,OVERDUE,VOID'],
+            'status' => ['sometimes', 'in:DRAFT,PENDING,PAID,OVERDUE'],
         ];
     }
 }

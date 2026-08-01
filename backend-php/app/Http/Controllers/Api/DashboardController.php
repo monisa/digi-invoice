@@ -31,7 +31,7 @@ class DashboardController extends Controller
         $byOwner = Quote::query()->selectRaw('owner_id, count(*) as cnt, sum(grand_total) as total')->groupBy('owner_id')->get();
         $acceptedByOwner = Quote::query()->where('status', 'ACCEPTED')
             ->selectRaw('owner_id, count(*) as cnt')->groupBy('owner_id')->get();
-        $invByStatus = Invoice::query()->selectRaw('status, count(*) as cnt')->groupBy('status')->get();
+        $invByStatus = Invoice::query()->selectRaw('status, count(*) as cnt, sum(grand_total) as total')->groupBy('status')->get();
         $expiringSoon = Quote::query()->whereIn('status', self::OPEN_STATUSES)
             ->whereBetween('valid_until', [$now, $in7Days])->count();
         $owners = User::all(['id', 'name']);
@@ -73,8 +73,13 @@ class DashboardController extends Controller
         ])->sortByDesc('totalQuotes')->values();
 
         $invoiceCounts = [];
+        $invoicedValue = BigDecimal::zero();
         foreach ($invByStatus as $row) {
             $invoiceCounts[$row->status] = (int) $row->cnt;
+            // DRAFT invoices aren't actually invoiced yet, so they're excluded.
+            if ($row->status !== 'DRAFT') {
+                $invoicedValue = $invoicedValue->plus(BigDecimal::of((string) ($row->total ?? '0')));
+            }
         }
 
         return ApiResponse::data([
@@ -90,9 +95,10 @@ class DashboardController extends Controller
             'acceptedValue' => (string) $acceptedValue->toScale(2, RoundingMode::HALF_UP),
             'winRate' => $winRate,
             'expiringSoon' => $expiringSoon,
+            'invoicedValue' => (string) $invoicedValue->toScale(2, RoundingMode::HALF_UP),
             'invoices' => [
                 'total' => array_sum($invoiceCounts),
-                'outstanding' => ($invoiceCounts['ISSUED'] ?? 0) + ($invoiceCounts['OVERDUE'] ?? 0),
+                'outstanding' => ($invoiceCounts['PENDING'] ?? 0) + ($invoiceCounts['OVERDUE'] ?? 0),
                 'paid' => $invoiceCounts['PAID'] ?? 0,
                 'byStatus' => (object) $invoiceCounts,
             ],

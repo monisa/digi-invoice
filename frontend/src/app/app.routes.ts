@@ -88,6 +88,21 @@ export const routes: Routes = [
           import('./features/invoices/invoice-list/invoice-list').then((m) => m.InvoiceList),
       },
       {
+        path: 'invoices/new',
+        loadComponent: () =>
+          import('./features/invoices/invoice-form/invoice-form').then((m) => m.InvoiceForm),
+      },
+      {
+        path: 'invoices/:id',
+        loadComponent: () =>
+          import('./features/invoices/invoice-detail/invoice-detail').then((m) => m.InvoiceDetail),
+      },
+      {
+        path: 'invoices/:id/edit',
+        loadComponent: () =>
+          import('./features/invoices/invoice-form/invoice-form').then((m) => m.InvoiceForm),
+      },
+      {
         path: 'quote-templates',
         loadComponent: () =>
           import('./features/quote-templates/template-list/template-list').then((m) => m.TemplateList),

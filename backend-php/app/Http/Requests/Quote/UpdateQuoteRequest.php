@@ -37,12 +37,12 @@ class UpdateQuoteRequest extends FormRequest
             'overallDiscountValue' => ['sometimes', 'numeric', 'min:0'],
             // When provided, line items are fully replaced and totals recomputed.
             'lineItems' => ['sometimes', 'array'],
-            'lineItems.*.productId' => ['sometimes', 'uuid'],
-            'lineItems.*.description' => ['sometimes', 'string', 'max:2000'],
+            'lineItems.*.productId' => ['sometimes', 'nullable', 'uuid'],
+            'lineItems.*.description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'lineItems.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lineItems.*.unitPrice' => ['required', 'numeric', 'min:0'],
-            'lineItems.*.discountPct' => ['sometimes', 'numeric', 'min:0', 'max:100'],
-            'lineItems.*.taxRateId' => ['sometimes', 'uuid'],
+            'lineItems.*.discountPct' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'lineItems.*.taxRateId' => ['sometimes', 'nullable', 'uuid'],
         ];
     }
 

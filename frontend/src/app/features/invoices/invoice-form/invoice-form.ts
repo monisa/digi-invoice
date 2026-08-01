@@ -14,7 +14,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { QuotesService } from '../quotes.service';
+import { InvoicesService } from '../invoices.service';
 import { AccountsService } from '../../accounts/accounts.service';
 import { ContactsService } from '../../contacts/contacts.service';
 import { ProductsService } from '../../products/products.service';
@@ -22,7 +22,7 @@ import { TaxRatesService } from '../../tax-rates/tax-rates.service';
 import { QuoteTemplatesService } from '../../quote-templates/quote-templates.service';
 import { extractApiError } from '../../../core/utils/api-error';
 import { calculateTotals, type CalcTotals } from '../../../core/utils/money-calc';
-import { EDITABLE_STATUSES, type QuotePayload } from '../../../core/models/quote.model';
+import { INVOICE_EDITABLE_STATUSES, type InvoicePayload } from '../../../core/models/invoice.model';
 import type { Account, Contact } from '../../../core/models/crm.model';
 import type { Product, TaxRate } from '../../../core/models/catalog.model';
 import type { QuoteTemplate } from '../../../core/models/quote-template.model';
@@ -36,7 +36,7 @@ const EMPTY_TOTALS: CalcTotals = {
 };
 
 @Component({
-  selector: 'app-quote-builder',
+  selector: 'app-invoice-form',
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -51,12 +51,12 @@ const EMPTY_TOTALS: CalcTotals = {
     MatProgressBarModule,
     MatTooltipModule,
   ],
-  templateUrl: './quote-builder.html',
-  styleUrl: './quote-builder.scss',
+  templateUrl: './invoice-form.html',
+  styleUrl: '../../quotes/quote-builder/quote-builder.scss',
 })
-export class QuoteBuilder {
+export class InvoiceForm {
   private readonly fb = inject(FormBuilder);
-  private readonly service = inject(QuotesService);
+  private readonly service = inject(InvoicesService);
   private readonly accountsService = inject(AccountsService);
   private readonly contactsService = inject(ContactsService);
   private readonly productsService = inject(ProductsService);
@@ -67,8 +67,8 @@ export class QuoteBuilder {
   private readonly snack = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly quoteId = this.route.snapshot.paramMap.get('id');
-  readonly isEdit = !!this.quoteId;
+  readonly invoiceId = this.route.snapshot.paramMap.get('id');
+  readonly isEdit = !!this.invoiceId;
 
   readonly accounts = signal<Account[]>([]);
   readonly contacts = signal<Contact[]>([]);
@@ -89,12 +89,12 @@ export class QuoteBuilder {
     templateId: [''],
     currency: ['USD', Validators.required],
     exchangeRate: ['1', [Validators.required, Validators.min(0.000001)]],
-    validUntil: [''],
+    dueDate: [''],
     overallDiscountType: ['PERCENT' as 'PERCENT' | 'AMOUNT'],
     overallDiscountValue: ['0', Validators.min(0)],
   });
 
-  readonly lineItems = this.fb.array<ReturnType<QuoteBuilder['makeLine']>>([]);
+  readonly lineItems = this.fb.array<ReturnType<InvoiceForm['makeLine']>>([]);
 
   readonly form = this.fb.group({ header: this.header, lineItems: this.lineItems });
 
@@ -106,7 +106,7 @@ export class QuoteBuilder {
     });
 
     if (this.isEdit) {
-      this.loadQuote(this.quoteId!);
+      this.loadInvoice(this.invoiceId!);
     } else {
       this.addLine();
     }
@@ -166,31 +166,33 @@ export class QuoteBuilder {
     this.contactsService.list({ pageSize: 100 }).subscribe((r) => this.contacts.set(r.items));
     this.productsService.list({ pageSize: 100 }).subscribe((r) => this.products.set(r.items));
     this.taxRatesService.list({ pageSize: 100 }).subscribe((r) => this.taxRates.set(r.items));
-    this.templatesService.list({ pageSize: 100 }).subscribe((r) => this.templates.set(r.items));
+    this.templatesService
+      .list({ pageSize: 100 })
+      .subscribe((r) => this.templates.set(r.items.filter((t) => t.appliesTo === 'INVOICE' || t.appliesTo === 'BOTH')));
   }
 
-  private loadQuote(id: string): void {
+  private loadInvoice(id: string): void {
     this.loading.set(true);
     this.service.get(id).subscribe({
-      next: (quote) => {
+      next: (invoice) => {
         this.loading.set(false);
-        if (!EDITABLE_STATUSES.includes(quote.status)) {
-          this.snack.open(`A ${quote.status} quote can't be edited`, 'Dismiss', { duration: 5000 });
-          void this.router.navigate(['/quotes', id]);
+        if (!INVOICE_EDITABLE_STATUSES.includes(invoice.status)) {
+          this.snack.open(`A ${invoice.status} invoice can't be edited`, 'Dismiss', { duration: 5000 });
+          void this.router.navigate(['/invoices', id]);
           return;
         }
         this.header.patchValue({
-          accountId: quote.accountId ?? '',
-          contactId: quote.contactId ?? '',
-          templateId: quote.templateId ?? '',
-          currency: quote.currency,
-          exchangeRate: quote.exchangeRate,
-          validUntil: quote.validUntil?.slice(0, 10) ?? '',
-          overallDiscountType: quote.overallDiscountType,
-          overallDiscountValue: quote.overallDiscountValue,
+          accountId: invoice.accountId ?? '',
+          contactId: invoice.contactId ?? '',
+          templateId: invoice.templateId ?? '',
+          currency: invoice.currency,
+          exchangeRate: invoice.exchangeRate,
+          dueDate: invoice.dueDate?.slice(0, 10) ?? '',
+          overallDiscountType: invoice.overallDiscountType,
+          overallDiscountValue: invoice.overallDiscountValue,
         });
         this.lineItems.clear();
-        for (const li of quote.lineItems ?? []) {
+        for (const li of invoice.lineItems ?? []) {
           const g = this.makeLine();
           g.patchValue({
             productId: li.productId ?? '',
@@ -206,7 +208,7 @@ export class QuoteBuilder {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(extractApiError(err, 'Could not load quote'));
+        this.error.set(extractApiError(err, 'Could not load invoice'));
       },
     });
   }
@@ -220,13 +222,13 @@ export class QuoteBuilder {
     this.error.set(null);
 
     const h = this.header.getRawValue();
-    const payload: QuotePayload = {
+    const payload: InvoicePayload = {
       accountId: h.accountId || null,
       contactId: h.contactId || null,
       templateId: h.templateId || null,
       currency: h.currency,
       exchangeRate: h.exchangeRate,
-      validUntil: h.validUntil || null,
+      dueDate: h.dueDate || null,
       overallDiscountType: h.overallDiscountType,
       overallDiscountValue: h.overallDiscountValue || '0',
       lineItems: this.lineItems.controls.map((g) => {
@@ -243,17 +245,17 @@ export class QuoteBuilder {
     };
 
     const req$ = this.isEdit
-      ? this.service.update(this.quoteId!, payload)
+      ? this.service.update(this.invoiceId!, payload)
       : this.service.create(payload);
 
     req$.subscribe({
-      next: (quote) => {
-        this.snack.open(this.isEdit ? 'Quote updated' : 'Quote created', undefined, { duration: 2500 });
-        void this.router.navigate(['/quotes', quote.id]);
+      next: (invoice) => {
+        this.snack.open(this.isEdit ? 'Invoice updated' : 'Invoice created', undefined, { duration: 2500 });
+        void this.router.navigate(['/invoices', invoice.id]);
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(extractApiError(err, 'Could not save quote'));
+        this.error.set(extractApiError(err, 'Could not save invoice'));
       },
     });
   }
